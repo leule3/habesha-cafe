@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☕ Evlogia Cafe & Restaurant — Owner Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --ink: #182230;
+            --muted: #657184;
+            --line: #dce2ea;
+            --primary: #a0522d;
+            --primary-hover: #8b4513;
+            --success: #1b7f4b;
+            --warn: #b66a00;
+            --danger: #b42318;
+            --night: #6a1b9a;
+            --shadow: 0 8px 24px rgba(22, 36, 58, 0.08);
+            --radius: 12px;
+            --radius-full: 9999px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+        button, input, select { font: inherit; }
+        button { cursor: pointer; border: 0; border-radius: var(--radius-full); padding: 8px 16px; font-weight: 700; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; }
+        .btn { background: #e9eef5; color: var(--ink); }
+        .btn:hover { background: #dce3ed; }
+        .primary { background: var(--primary); color: #fff; }
+        .primary:hover { background: var(--primary-hover); }
+        .success { background: var(--success); color: #fff; }
+        .success:hover { background: #14633a; }
+        .warn { background: var(--warn); color: #fff; }
+        .warn:hover { background: #945600; }
+        .danger { background: var(--danger); color: #fff; }
+        .danger:hover { background: #911c13; }
+        .outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); text-decoration: none; }
+        .outline:hover { background: rgba(160, 82, 45, 0.08); }
+        .small { padding: 5px 10px; font-size: 0.78rem; }
+
+        .top { background: #2c221e; color: #fff; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+        .topin { max-width: 1300px; margin: auto; padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .brand { font-weight: 900; font-size: 1.2rem; margin-right: auto; display: flex; align-items: center; gap: 8px; color: #f9f6f0; }
+        .brand i { color: var(--primary); }
+        .badge { background: rgba(255,255,255,0.12); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); }
+
+        .container { max-width: 1300px; margin: auto; padding: 20px; }
+        .login { max-width: 480px; }
+        .hidden { display: none !important; }
+
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+        .card { grid-column: span 6; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+        .wide { grid-column: 1 / -1; }
+        .title { font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 8px; flex-wrap: wrap; }
+        .title i { color: var(--primary); }
+        .sub { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+        .notice { background: rgba(160, 82, 45, 0.08); border: 1px dashed var(--primary); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.5; }
+
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        .field label { font-size: 0.78rem; font-weight: 700; color: var(--muted); }
+        input, select { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; width: 100%; background: #fff; color: var(--ink); }
+        input:focus, select:focus { outline: 2px solid rgba(160, 82, 45, 0.35); border-color: var(--primary); }
+
+        .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .error { color: var(--danger); font-size: 0.85rem; font-weight: 700; }
+        .ok { color: var(--success); font-size: 0.85rem; font-weight: 700; }
+
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; }
+        .stat span { font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+        .stat b { font-size: 1.1rem; }
+
+        .pill { background: rgba(160, 82, 45, 0.12); color: var(--primary); border-radius: var(--radius-full); padding: 3px 10px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+        .pill.hr { background: rgba(106, 27, 154, 0.1); color: var(--night); }
+        .pill.admin { background: rgba(160, 82, 45, 0.12); color: var(--primary); }
+
+        .keyrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #f2f4f9; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+        .keyrow code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 0.8rem; word-break: break-all; }
+
+        .staff-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-bottom: 1px dashed var(--line); padding: 8px 0; }
+        .staff-row:last-child { border-bottom: 0; }
+        .new-staff { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #f8fbff; border: 1px dashed var(--line); border-radius: 10px; padding: 12px; }
+
+        .empty { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 0.9rem; }
+        .muted { color: var(--muted); }
+    </style>
+</head>
+<body>
+
+<header class="top">
+    <div class="topin">
+        <div class="brand"><i class="fas fa-user-cog"></i> Owner Portal — Evlogia Cafe &amp; Restaurant</div>
+        <span id="ownerBadge" class="badge hidden"></span>
+        <a class="small btn" href="index.html" style="text-decoration:none;"><i class="fas fa-store"></i> Open Café App</a>
+        <button id="logoutBtn" class="small danger hidden"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- First-time setup (only while no Owner account exists) -->
+    <div id="setupView" class="card login hidden" style="margin:auto;">
+        <div class="title"><i class="fas fa-user-shield"></i> Create Owner Account</div>
+        <div class="notice"><b>First-time setup.</b> No owner account exists yet. This becomes the master account that can create <b>Cafe Admin</b> and <b>HR Manager</b> credentials for every café.</div>
+        <div class="field"><label>Your Full Name</label><input id="setupName" placeholder="Owner Name" autocomplete="name"></div>
+        <div class="field"><label>Username</label><input id="setupUser" placeholder="ownername" autocomplete="username"></div>
+        <div class="field"><label>Password (min 6 characters)</label><input id="setupPass" type="password" placeholder="Create a strong password" autocomplete="new-password"></div>
+        <div class="field"><label>Confirm Password</label><input id="setupPass2" type="password" placeholder="Repeat password" autocomplete="new-password"></div>
+        <button id="setupBtn" class="primary" style="width:100%; margin-top: 6px;"><i class="fas fa-check-circle"></i> Create Owner Account</button>
+        <div id="setupMsg" class="error"></div>
+    </div>
+
+    <!-- Owner sign in -->
+    <div id="loginView" class="card login hidden" style="margin:auto;">
+        <div class="title"><i class="fas fa-user-lock"></i> Owner Sign In</div>
+        <div class="field"><label>Username</label><input id="loginUser" placeholder="Owner username" autocomplete="username"></div>
+        <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="Password" autocomplete="current-password"></div>
+        <button id="loginBtn" class="primary" style="width:100%; margin-top: 6px;"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+        <div id="loginMsg" class="error"></div>
+        <div class="sub" style="text-align:center;">This is the master Owner Portal.<br>Staff sign into the <a href="index.html">main café app</a> instead.</div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+        <div class="row" style="margin-bottom: 16px;">
+            <div>
+                <h2 style="margin: 0;"><i class="fas fa-store-alt"></i> Cafés</h2>
+                <div class="sub">Create and manage <b>Cafe Admin</b> &amp; <b>HR Manager</b> credentials for every café.</div>
+            </div>
+            <button id="refreshBtn" class="btn small" style="margin-left: auto;"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="title"><i class="fas fa-plus-circle"></i> Create New Café</div>
+                <div class="sub">Adds a brand-new, isolated café workspace. After creating it, open the café link on that café's computer, then come back here to create its Admin &amp; HR accounts.</div>
+                <div class="field"><label>Café Name / Label</label><input id="newCafeLabel" placeholder="e.g. Evlogia Bole Branch"></div>
+                <button id="newCafeBtn" class="success" style="width:100%;"><i class="fas fa-plus"></i> Create Café</button>
+            </div>
+
+            <div id="cafeList" class="card wide"></div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const TOKEN_KEY = 'hc_owner_token';
+
+async function api(path, opts = {}) {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch('/api/owner' + path, {
+        method: opts.method || 'GET',
+        headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* non-JSON */ }
+    if (res.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        showLogin();
+        throw new Error(data.error || 'Session expired. Please sign in again.');
+    }
+    if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ').');
+    return data;
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function cafeName(c) { return c.label || c.cafeId; }
+
+function viewState() {
+    $('setupView').classList.add('hidden');
+    $('loginView').classList.add('hidden');
+    $('dashboard').classList.add('hidden');
+    $('ownerBadge').classList.add('hidden');
+    $('logoutBtn').classList.add('hidden');
+}
+
+function showLogin() {
+    viewState();
+    $('loginView').classList.remove('hidden');
+}
+
+function showSetup() {
+    viewState();
+    $('setupView').classList.remove('hidden');
+}
+
+function showDashboard() {
+    viewState();
+    $('dashboard').classList.remove('hidden');
+    $('ownerBadge').classList.remove('hidden');
+    $('logoutBtn').classList.remove('hidden');
+}
+
+// ── Auth: setup / login / logout ─────────────────────────────────────────────
+async function initAuth() {
+    try {
+        const status = await api('/status');
+        if (status.hasOwner) {
+            showLogin();
+        } else {
+            showSetup();
+        }
+    } catch (e) {
+        $('loginMsg').textContent = e.message;
+    }
+
+    // If a token is already stored, try to enter the dashboard.
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+        try {
+            const me = await api('/me');
+            $('ownerBadge').textContent = '👑 ' + (me.owner.name || me.owner.username);
+            await loadCafes();
+            showDashboard();
+        } catch (e) { /* showLogin already handled by api() */ }
+    }
+}
+
+$('setupBtn').onclick = async () => {
+    const name = $('setupName').value.trim();
+    const username = $('setupUser').value.trim();
+    const pass = $('setupPass').value;
+    const pass2 = $('setupPass2').value;
+    if (pass.length < 6) return $('setupMsg').textContent = 'Password must be at least 6 characters.';
+    if (pass !== pass2) return $('setupMsg').textContent = 'Passwords do not match.';
+    try {
+        await api('/setup', { method: 'POST', body: { name, username, password: pass } });
+        $('setupMsg').textContent = '✅ Owner account created! Now sign in.';
+        $('setupMsg').className = 'ok';
+        showLogin();
+        $('loginUser').value = username.toLowerCase();
+        $('loginPass').focus();
+    } catch (e) {
+        $('setupMsg').textContent = e.message;
+        $('setupMsg').className = 'error';
+    }
+};
+
+$('loginBtn').onclick = async () => {
+    const username = $('loginUser').value.trim();
+    const password = $('loginPass').value;
+    try {
+        const data = await api('/login', { method: 'POST', body: { username, password } });
+        localStorage.setItem(TOKEN_KEY, data.token);
+        $('ownerBadge').textContent = '👑 ' + (data.owner.name || data.owner.username);
+        $('loginMsg').textContent = '';
+        $('loginPass').value = '';
+        await loadCafes();
+        showDashboard();
+    } catch (e) {
+        $('loginMsg').textContent = e.message;
+    }
+};
+
+$('logoutBtn').onclick = async () => {
+    try { await api('/logout', { method: 'POST' }); } catch (e) { /* ignore */ }
+    localStorage.removeItem(TOKEN_KEY);
+    await initAuth();
+};
+
+// ── Café list ────────────────────────────────────────────────────────────────
+async function loadCafes() {
+    const data = await api('/cafes');
+    renderCafes(data.cafes || []);
+}
+
+function renderCafes(cafes) {
+    const el = $('cafeList');
+    if (!cafes.length) {
+        el.innerHTML = `<div class="empty">No cafés yet. Create your first café above, then open its link on that café's computer and come back here to add the Admin &amp; HR accounts.</div>`;
+        return;
+    }
+    el.innerHTML = `<div class="title"><i class="fas fa-store-alt"></i> All Cafés</div>` +
+        cafes.map(c => cafeCard(c)).join('');
+}
+
+function cafeCard(c) {
+    const admins = c.staff.filter(s => s.role === 'admin');
+    const hrs = c.staff.filter(s => s.role === 'hr');
+    const keyBadge = c.accessKey
+        ? `🔑 <code style="font-size:0.8em;">${esc(c.accessKey.length > 16 ? c.accessKey.slice(0, 16) + '…' : c.accessKey)}</code>`
+        : '🔑 Not yet claimed — new café';
+    return `
+        <div class="card wide" style="margin-top: 12px;">
+            <div class="title">
+                <i class="fas fa-store"></i> ${esc(cafeName(c))}
+                <span class="pill">${esc(c.cafeId)}</span>
+                <span class="badge" style="cursor:default;">${keyBadge}</span>
+            </div>
+
+            <div class="stats">
+                <div class="stat"><span>Employees</span><b>${c.counts.employees}</b></div>
+                <div class="stat"><span>Admins</span><b>${admins.length}</b></div>
+                <div class="stat"><span>HR</span><b>${hrs.length}</b></div>
+                <div class="stat"><span>Orders</span><b>${c.counts.orders}</b></div>
+                <div class="stat"><span>Menu Items</span><b>${c.counts.menu}</b></div>
+            </div>
+
+            <div class="row">
+                <a class="small outline" target="_blank" rel="noopener" href="/index.html?cafe=${encodeURIComponent(c.cafeId)}${c.accessKey ? '&key=' + encodeURIComponent(c.accessKey) : ''}"><i class="fas fa-external-link-alt"></i> Open Café</a>
+                <button class="small btn" onclick="copyCafeLink('${esc(c.cafeId)}')"><i class="fas fa-copy"></i> Copy Café Link</button>
+                <button class="small warn" onclick="rotateKey('${esc(c.cafeId)}')"><i class="fas fa-key"></i> Rotate Access Key</button>
+                <button class="small danger" onclick="deleteCafe('${esc(c.cafeId)}')" style="margin-left:auto;"><i class="fas fa-trash"></i> Delete Café</button>
+            </div>
+
+            <div>
+                <div class="sub" style="margin-bottom:6px;"><i class="fas fa-user-plus"></i> Create a Cafe Admin or HR Manager for this café</div>
+                <div class="new-staff">
+                    <div class="field"><label>Full Name</label><input id="newStaffName_${esc(c.cafeId)}" placeholder="Name"></div>
+                    <div class="field"><label>Username</label><input id="newStaffUser_${esc(c.cafeId)}" placeholder="username"></div>
+                    <div class="field"><label>Role</label>
+                        <select id="newStaffRole_${esc(c.cafeId)}">
+                            <option value="admin">Cafe Admin</option>
+                            <option value="hr">HR Manager</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Initial Password</label><input id="newStaffPass_${esc(c.cafeId)}" type="password" placeholder="password"></div>
+                    <button class="success small" style="grid-column: 1 / -1; justify-self: start;" onclick="createStaff('${esc(c.cafeId)}')"><i class="fas fa-user-plus"></i> Create Staff Account</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="sub" style="margin-bottom: 6px;"><i class="fas fa-users-cog"></i> Staff accounts (${admins.length + hrs.length})</div>
+                ${c.staff.length ? c.staff.map(s => staffRow(c.cafeId, s)).join('') : '<div class="sub muted">No Admin/HR accounts yet — create them with the form above.</div>'}
+            </div>
+        </div>`;
+}
+
+function staffRow(cafeId, s) {
+    return `
+        <div class="staff-row">
+            <span class="pill ${s.role}">${s.role === 'admin' ? 'Cafe Admin' : 'HR Manager'}</span>
+            <b>${esc(s.name)}</b>
+            <span class="muted">@${esc(s.username)}</span>
+            <span style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="small btn" onclick="editStaff('${esc(cafeId)}','${esc(s.username)}')"><i class="fas fa-pen"></i> Reset / Edit</button>
+                <button class="small danger" onclick="deleteStaff('${esc(cafeId)}','${esc(s.username)}')"><i class="fas fa-user-minus"></i> Remove</button>
+            </span>
+        </div>`;
+}
+
+// ── Staff actions ────────────────────────────────────────────────────────────
+async function createStaff(cafeId) {
+    const name = $('newStaffName_' + cafeId).value.trim();
+    const username = $('newStaffUser_' + cafeId).value.trim();
+    const role = $('newStaffRole_' + cafeId).value;
+    const password = $('newStaffPass_' + cafeId).value;
+    if (!name || !username || !password) return notice('Fill in name, username and password.');
+    if (password.length < 3) return notice('Password must be at least 3 characters.');
+    try {
+        await api('/cafes/' + encodeURIComponent(cafeId) + '/staff', { method: 'POST', body: { name, username, role, password } });
+        notice('✅ ' + (role === 'admin' ? 'Cafe Admin' : 'HR Manager') + ' "' + username + '" created for this café.');
+        await loadCafes();
+    } catch (e) { notice('❌ ' + e.message); }
+}
+
+async function editStaff(cafeId, username) {
+    const name = prompt('Full name for @' + username + ':', '');
+    if (name === null) return;
+    const role = prompt('Role (admin or hr):', '');
+    if (role === null) return;
+    const newPass = prompt('New password (leave blank to keep current):', '');
+    if (newPass === null) return;
+    if (role !== '' && role !== 'admin' && role !== 'hr') return notice('Role must be admin or hr.');
+    const body = {};
+    if (name.trim()) body.name = name.trim();
+    if (role.trim()) body.role = role.trim();
+    if (newPass) body.password = newPass;
+    try {
+        await api('/cafes/' + encodeURIComponent(cafeId) + '/staff/' + encodeURIComponent(username), { method: 'PUT', body });
+        notice('✅ Staff account updated.');
+        await loadCafes();
+    } catch (e) { notice('❌ ' + e.message); }
+}
+
+async function deleteStaff(cafeId, username) {
+    if (!confirm('Remove @' + username + ' from this café?')) return;
+    try {
+        await api('/cafes/' + encodeURIComponent(cafeId) + '/staff/' + encodeURIComponent(username), { method: 'DELETE' });
+        notice('✅ Removed @' + username + '.');
+        await loadCafes();
+    } catch (e) { notice('❌ ' + e.message); }
+}
+
+// ── Café actions ─────────────────────────────────────────────────────────────
+$('newCafeBtn').onclick = async () => {
+    const label = $('newCafeLabel').value.trim();
+    try {
+        const data = await api('/cafes', { method: 'POST', body: { label } });
+        const c = data.cafe;
+        const origin = data.origin || window.location.origin;
+        const link = origin + '/index.html?cafe=' + encodeURIComponent(c.cafeId) + (c.accessKey ? '&key=' + encodeURIComponent(c.accessKey) : '');
+        const note = c.accessKey
+            ? ''
+            : '\n\n⚠️ The access key is claimed automatically the first time this café link is opened on the café\'s own device. Open the link first, then create its Admin/HR accounts.';
+        notice('✅ Café "' + cafeName(c) + '" created (id ' + c.cafeId + ').' + note);
+        try {
+            await navigator.clipboard.writeText(link);
+        } catch (e) { /* clipboard may be unavailable */ }
+        $('newCafeLabel').value = '';
+        await loadCafes();
+    } catch (e) { notice('❌ ' + e.message); }
+};
+
+$('refreshBtn').onclick = async () => {
+    try { await loadCafes(); } catch (e) { notice('❌ ' + e.message); }
+};
+
+window.copyCafeLink = async (cafeId) => {
+    const data = await api('/cafes');
+    const c = data.cafes.find(x => x.cafeId === cafeId);
+    if (!c) return notice('Café not found.');
+    const link = window.location.origin + '/index.html?cafe=' + encodeURIComponent(cafeId) + (c.accessKey ? '&key=' + encodeURIComponent(c.accessKey) : '');
+    try {
+        await navigator.clipboard.writeText(link);
+        notice('✅ Café link copied to clipboard. Open it on that café\'s computer, then create the Admin/HR accounts here.');
+    } catch (e) {
+        prompt('Copy this café link:', link);
+    }
+};
+
+window.rotateKey = async (cafeId) => {
+    if (!confirm('Generate a NEW access key for this café? The old key will stop working immediately on every device.')) return;
+    try {
+        const data = await api('/cafes/' + encodeURIComponent(cafeId) + '/rotate-key', { method: 'POST' });
+        prompt('✅ New access key. Store it somewhere safe and update the café device:', data.accessKey);
+        await loadCafes();
+    } catch (e) { notice('❌ ' + e.message); }
+};
+
+window.deleteCafe = async (cafeId) => {
+    if (!confirm('🚨 PERMANENTLY DELETE café "' + cafeId + '" and ALL its data? This cannot be undone.')) return;
+    if (prompt('Type the café id "' + cafeId + '" to confirm:') !== cafeId) return alert('Deletion cancelled.');
+    try {
+        await api('/cafes/' + encodeURIComponent(cafeId), { method: 'DELETE' });
+        notice('✅ Café deleted.');
+        await loadCafes();
+    } catch (e) { notice('❌ ' + e.message); }
+};
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+initAuth().catch(e => {
+    const el = $('loginMsg');
+    if (el) el.textContent = e.message;
+});
+</script>
+</body>
+</html>

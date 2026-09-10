@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Secrets & environment — never commit real credentials
+.env
+
+# Local data that has been migrated to MongoDB (contains password hashes)
+data/
+
+# Temporary logs / throwaway scripts
+*.log
+inspect_tmp.js
+prep_test*.js
+test_crypto.js
+test_password.js
+results.txt
+
+# Exported/imported café data snapshots — these contain real employee names
+# and business data and must never be committed or deployed.
+cafe.json
+fixed_cafe.json
+fixed_hr.json
+*.hr-export.json

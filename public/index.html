@@ -1,0 +1,3936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☕ Evlogia cafe & Restaurant — Complete Offline Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --ink: #182230;
+            --muted: #657184;
+            --line: #dce2ea;
+            --primary: #a0522d;
+            --primary-hover: #8b4513;
+            --success: #1b7f4b;
+            --warn: #b66a00;
+            --danger: #b42318;
+            --night: #6a1b9a;
+            --shadow: 0 8px 24px rgba(22, 36, 58, 0.08);
+            --radius: 12px;
+            --radius-full: 9999px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+        
+        button, input, select { font: inherit; }
+        button { cursor: pointer; border: 0; border-radius: var(--radius-full); padding: 8px 16px; font-weight: 700; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; }
+        
+        .btn { background: #e9eef5; color: var(--ink); }
+        .btn:hover { background: #dce3ed; }
+        .primary { background: var(--primary); color: #fff; }
+        .primary:hover { background: var(--primary-hover); }
+        .success { background: var(--success); color: #fff; }
+        .success:hover { background: #14633a; }
+        .warn { background: var(--warn); color: #fff; }
+        .warn:hover { background: #945600; }
+        .danger { background: var(--danger); color: #fff; }
+        .danger:hover { background: #911c13; }
+        .night { background: var(--night); color: #fff; }
+        .night:hover { background: #4a148c; }
+        .outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .outline:hover { background: rgba(160, 82, 45, 0.08); }
+        .small { padding: 5px 10px; font-size: 0.78rem; }
+
+        .top { background: #2c221e; color: #fff; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+        .topin { max-width: 1300px; margin: auto; padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .brand { font-weight: 900; font-size: 1.2rem; margin-right: auto; display: flex; align-items: center; gap: 8px; color: #f9f6f0; }
+        .brand i { color: var(--primary); }
+        .badge { background: rgba(255,255,255,0.12); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); }
+
+        .container { max-width: 1300px; margin: auto; padding: 20px; }
+        .hidden { display: none !important; }
+
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 2px solid var(--line); padding-bottom: 10px; }
+        .tab { background: var(--card); border: 1px solid var(--line); color: var(--ink); border-radius: var(--radius-full); }
+        .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+        .card { grid-column: span 6; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+        .wide { grid-column: 1 / -1; }
+        .title { font-size: 1.1rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
+        .title i { color: var(--primary); }
+        .sub { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+
+        .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
+        .field label { font-size: 0.78rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field input, .field select { border: 1px solid var(--line); border-radius: var(--radius-full); padding: 8px 14px; background: #fff; font-size: 0.88rem; outline: none; }
+        .field input:focus, .field select:focus { border-color: var(--primary); }
+
+        /* ── Password visibility toggle ── */
+        .pw-wrap { position: relative; display: flex; align-items: center; width: 100%; }
+        .pw-wrap input { flex: 1; width: 100%; padding-right: 42px; }
+        .pw-eye { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--muted); width: 34px; height: 30px; padding: 4px; border-radius: var(--radius-full); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .pw-eye:hover { color: var(--primary); }
+
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .stat { padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: #fbfcfe; text-align: center; }
+        .stat span { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+        .stat b { display: block; font-size: 1.3rem; margin-top: 4px; color: var(--primary); }
+
+        .list { max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+        .item { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .item:last-child { border-bottom: 0; }
+        
+        .pill { display: inline-block; padding: 3px 10px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; }
+        .pill.ok { background: #e7f6ee; color: #17683e; }
+        .pill.bad { background: #fdecea; color: #9b1c14; }
+        .pill.warn { background: #fff3e0; color: var(--warn); }
+        .pill.info { background: #e3f2fd; color: #0d47a1; }
+        .pill.night { background: #f3e5f5; color: var(--night); }
+
+        .sync-box { border: 2px dashed #b9c8d8; background: #f8fbff; }
+        .notice { padding: 12px 16px; border-radius: var(--radius); background: #eef6ff; border: 1px solid #cfe4fb; color: #16466f; font-size: 0.88rem; }
+        .login { max-width: 440px; margin: 8vh auto; }
+        .login .card { grid-column: 1 / -1; }
+        .error { color: var(--danger); font-size: 0.85rem; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: #fff; padding: 24px; border-radius: var(--radius); max-width: 460px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid var(--line); }
+        
+        .payment-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .account-num { font-family: monospace; font-size: 1rem; color: var(--primary); font-weight: 700; letter-spacing: 1px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); }
+        th { background: #f6f8fb; font-weight: 700; }
+
+        /* ── Live Employee Picker ── */
+        .emp-search-wrap { position: relative; }
+        .emp-search-input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius-full); padding: 9px 36px 9px 14px; font: inherit; font-size: 0.88rem; outline: none; background: #fff; transition: border-color 0.2s; }
+        .emp-search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(160,82,45,0.12); }
+        .emp-search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 50%; display: none; font-size: 0.9rem; }
+        .emp-search-clear.visible { display: flex; }
+        .emp-picker-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-top: 8px; max-height: 240px; overflow-y: auto; padding: 2px; }
+        .emp-card { border: 2px solid var(--line); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; transition: all 0.18s ease; background: #fff; position: relative; }
+        .emp-card:hover { border-color: var(--primary); background: #fdf8f5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(160,82,45,0.12); }
+        .emp-card.selected { border-color: var(--primary); background: rgba(160,82,45,0.06); box-shadow: 0 0 0 3px rgba(160,82,45,0.15); }
+        .emp-card.on-leave { opacity: 0.55; }
+        .emp-card-name { font-weight: 700; font-size: 0.88rem; color: var(--ink); }
+        .emp-card-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+        .emp-card-balance { font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+        .emp-card-check { position: absolute; top: 7px; right: 8px; color: var(--primary); font-size: 0.85rem; display: none; }
+        .emp-card.selected .emp-card-check { display: block; }
+        .emp-no-results { padding: 20px; text-align: center; color: var(--muted); font-size: 0.85rem; font-style: italic; }
+        .selected-emp-banner { background: rgba(160,82,45,0.08); border: 1px solid rgba(160,82,45,0.25); border-radius: var(--radius); padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .selected-emp-banner b { color: var(--primary); }
+
+        /* ── HR Roster cards ── */
+        .hr-emp-card { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+        .hr-emp-card:last-child { border-bottom: 0; }
+        .hr-emp-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+        .hr-emp-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+        .quote-card { background: linear-gradient(135deg, #fdf8f5 0%, #f5ebe3 100%); border: 1px solid rgba(160,82,45,0.2); border-radius: var(--radius); padding: 16px 20px; font-style: italic; color: var(--ink); line-height: 1.5; }
+        .quote-card b { font-style: normal; color: var(--primary); }
+        .menu-reorder-btn { padding: 4px 8px; min-width: 28px; }
+
+        @media(max-width: 850px) {
+            .card { grid-column: 1 / -1; }
+            .topin { flex-wrap: wrap; }
+            .brand { width: 100%; }
+            .emp-picker-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Container -->
+<div id="loginView" class="container login">
+    <div class="card">
+        <div class="title"><i class="fas fa-coffee"></i> Evlogia cafe & Restaurant — Offline Portal</div>
+        <div class="notice">
+            <b>No internet required.</b> Connects to the local cafe server on your network with <b>fractional coupon support</b>.
+        </div>
+        <div class="field">
+            <label>Username</label>
+            <input id="loginUser" placeholder="Enter username" autocomplete="username">
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <div class="pw-wrap">
+                <input id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password">
+                <button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+        </div>
+        <button id="loginBtn" class="primary" style="width:100%; margin-top: 10px;"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+        <button id="showSignupBtn" class="outline" style="width:100%; margin-top: 10px;"><i class="fas fa-user-plus"></i> Create Employee Account</button>
+        <div id="loginMsg" class="error"></div>
+        <div class="sub" style="text-align: center; margin-top: 10px;">
+            Default Admin: <b>admin</b> / <b>admin123</b><br>
+            Default Super Admin: <b>superadmin</b> / <b>admin123</b>
+        </div>
+        <div class="sub" style="text-align: center; margin-top: 12px;">
+            <a href="owner.html" style="display:inline-flex; align-items:center; gap:6px;"><i class="fas fa-user-cog"></i> Owner Portal — create café admins &amp; HR accounts</a>
+        </div>
+    </div>
+</div>
+
+<div id="signupView" class="container login hidden">
+    <div class="card">
+        <div class="title"><i class="fas fa-user-plus"></i> Employee Sign Up</div>
+        <div class="field"><label>Full Name</label><input id="regName" placeholder="Full Name"></div>
+        <div class="field"><label>Username</label><input id="regUser" placeholder="Choose username"></div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input id="regPass" type="password" placeholder="Create password"><button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button></div></div>
+        <button id="doSignupBtn" class="success" style="width:100%; margin-top: 10px;">Register</button>
+        <button id="cancelSignupBtn" class="outline" style="width:100%; margin-top: 10px;">Back to Login</button>
+        <div id="signupMsg" class="error"></div>
+    </div>
+</div>
+
+<!-- Main Application -->
+<div id="app" class="hidden">
+    <header class="top">
+        <div class="topin">
+            <div class="brand"><i class="fas fa-coffee"></i> Evlogia cafe & Restaurant</div>
+            <span id="roleBadge" class="badge">Role</span>
+            <span id="syncBadge" class="badge" style="background: rgba(46,125,50,0.3);"><i class="fas fa-network-wired"></i> Network Server</span>
+            <button id="showPaymentDetailsBtn" class="small warn"><i class="fas fa-wallet"></i> CBE / Telebirr Accounts</button>
+            <button id="backupBtn" class="small"><i class="fas fa-download"></i> Backup</button>
+            <button id="resetDbBtn" class="small danger hidden"><i class="fas fa-trash"></i> Reset</button>
+            <button id="logoutBtn" class="small danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="tabs" id="tabs"></div>
+        <div id="content"></div>
+    </main>
+</div>
+
+<!-- CBE & Telebirr Payment Sheet Modal -->
+<div id="paymentModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h3 class="title" style="margin-bottom: 12px;"><i class="fas fa-mobile-alt"></i> Digital Payment Accounts</h3>
+        <p class="sub" style="margin-bottom: 16px;">Transfer cash via Telebirr or CBE, then present transaction details to the cashier.</p>
+
+        <!-- CBE Account -->
+        <div class="payment-card">
+            <div>
+                <div style="font-weight: 700; font-size: 0.9rem;"><i class="fas fa-university" style="color: #6a1b9a;"></i> Commercial Bank of Ethiopia</div>
+                <div class="sub">Account Name: <b>Evlogia cafe & Restaurant</b></div>
+                <div class="account-num">1000 6391 56722</div>
+            </div>
+            <button class="small outline" onclick="copyToClipboard('1000639156722', 'CBE Account Number')"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+
+        <!-- Telebirr Account -->
+        <div class="payment-card">
+            <div>
+                <div style="font-weight: 700; font-size: 0.9rem;"><i class="fas fa-mobile-alt" style="color: #0088cc;"></i> Telebirr Mobile Pay</div>
+                <div class="sub">Account Name: <b>Evlogia cafe & Restaurant Enterprise</b></div>
+                <div class="account-num">09 12 79 25 46</div>
+            </div>
+            <button class="small outline" onclick="copyToClipboard('0912792546', 'Telebirr Number')"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+
+        <button class="primary" style="width:100%; margin-top: 10px;" id="closePaymentModalBtn">Close Window</button>
+    </div>
+</div>
+
+<!-- Remainder payment choice (coupon used first, pay rest with wallet or cash) -->
+<div id="remainderModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h3 class="title" style="margin-bottom: 8px;"><i class="fas fa-coins"></i> Pay Remainder</h3>
+        <p class="sub" id="remainderModalSummary"></p>
+        <div id="remainderModalActions" style="display:flex; flex-direction:column; gap:8px; margin-top:12px;"></div>
+        <button class="btn" style="width:100%; margin-top:10px;" id="remainderModalCancelBtn">Cancel Order</button>
+    </div>
+</div>
+
+<script>
+'use strict';
+const DB = 'habesha_cafe_offline_v7';
+const STORE = 'state';
+const COUPON_VAL = 40;
+const NIGHT_COUPON_VAL = 30;
+const DECIMAL_PRECISION = 2;
+
+let db, currentUser, state;
+let employeeCart = [], authCart = [], walkinCart = [];
+let cafeEmpSearchQuery = '', hrEmpSearchQuery = '';
+let menuSearchQuery = '', walkinMenuSearchQuery = '';
+let cafeSelectedEmpId = null; // live-picker selection for Cafe Bureau
+let transferFromEmpId = null, transferToEmpId = null;
+let transferFromSearchQuery = '', transferToSearchQuery = '';
+let empTransferToId = null, empTransferSearchQuery = '';
+let empCouponTransferToId = null, empCouponTransferSearchQuery = '';
+let walletDepositEmpId = null, walletDepositSearchQuery = '';
+let editDishId = null, editWalkinDishId = null; // for menu editing
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const now = () => new Date().toISOString();
+
+// crypto.randomUUID() only works in "secure contexts" (HTTPS or localhost).
+// Since other computers reach this app over plain http://<lan-ip>:port, it's
+// unavailable there — fall back to crypto.getRandomValues (works everywhere)
+// or Math.random as a last resort.
+function uuidv4() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    if (crypto.getRandomValues) {
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = [...bytes].map(b => b.toString(16).padStart(2, '0'));
+        return `${hex.slice(0,4).join('')}-${hex.slice(4,6).join('')}-${hex.slice(6,8).join('')}-${hex.slice(8,10).join('')}-${hex.slice(10,16).join('')}`;
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+const genId = () => uuidv4();
+const round = (num) => Math.round(num * Math.pow(10, DECIMAL_PRECISION)) / Math.pow(10, DECIMAL_PRECISION);
+
+// Network Sync (replaces IndexedDB) — talks to the local Node server
+let stateVersion = 0;
+let ws = null;
+let wsReconnectTimer = null;
+let currentTab = 'home';
+let pendingRemoteUpdate = false;
+
+// Per-cafe tenant id. Each café (owner) gets its own private, persistent
+// workspace so cafés never share data — even when they use the same cloud
+// database. Stored in localStorage so it survives reloads.
+let hcCafeTenant = null;
+try { hcCafeTenant = localStorage.getItem('hc_cafe_id') || null; } catch (e) { hcCafeTenant = null; }
+function tenantId() {
+    if (!hcCafeTenant) {
+        hcCafeTenant = 'cafe_' + genId();
+        try { localStorage.setItem('hc_cafe_id', hcCafeTenant); } catch (e) {}
+    }
+    return hcCafeTenant;
+}
+// Adopt a cafe id returned by the server (used when recovering a single
+// existing installation that was migrated into the cloud).
+function adoptTenant(cafe) {
+    if (cafe && cafe !== hcCafeTenant) {
+        hcCafeTenant = cafe;
+        try { localStorage.setItem('hc_cafe_id', hcCafeTenant); } catch (e) {}
+    }
+}
+
+// Per-cafe access key. The server hands this back the first time a cafe is
+// created (or "claimed"), and every read/write after that must include it —
+// this is what stops someone who merely learns the cafe id from reading or
+// overwriting the cafe's data. Stored in localStorage next to the cafe id.
+let hcCafeKey = null;
+try { hcCafeKey = localStorage.getItem('hc_cafe_key') || null; } catch (e) { hcCafeKey = null; }
+function cafeKey() {
+    return hcCafeKey || '';
+}
+function adoptKey(key) {
+    if (key && key !== hcCafeKey) {
+        hcCafeKey = key;
+        try { localStorage.setItem('hc_cafe_key', hcCafeKey); } catch (e) {}
+    }
+}
+
+// Café handoff from the Owner Portal: opening
+//   /index.html?cafe=<cafeId>&key=<accessKey>
+// links this device to that café's workspace (adopting its id and sharing
+// its access key). This is how a brand-new café's computer is connected to
+// the café the owner created in the Owner Portal.
+(function () {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const cafe = (params.get('cafe') || '').trim();
+        const key = (params.get('key') || '').trim();
+        if (cafe) {
+            hcCafeTenant = cafe;
+            localStorage.setItem('hc_cafe_id', cafe);
+        }
+        if (key) {
+            hcCafeKey = key;
+            localStorage.setItem('hc_cafe_key', key);
+        }
+    } catch (e) { /* ignore URL-param failures */ }
+})();
+
+function apiBase() {
+    return ''; // same-origin: page is served BY the host computer's server
+}
+
+async function fetchState() {
+    const url = apiBase() + '/api/state?cafe=' + encodeURIComponent(tenantId());
+    const res = await fetch(url, { headers: { 'X-Cafe-Key': cafeKey() } });
+    if (res.status === 401) {
+        throw new Error('This device is not recognized for this cafe (its saved key is missing or wrong). If you cleared browser storage or moved to a new device, ask an owner/admin to share this cafe\'s access key.');
+    }
+    if (!res.ok) throw new Error('Could not reach the cafe server. Is it running on this network?');
+    const data = await res.json();
+    adoptTenant(data.cafe);
+    adoptKey(data.key);
+    state = data.state;
+    stateVersion = data.version || 0;
+}
+
+function connectWebSocket() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/?cafe=${encodeURIComponent(tenantId())}&key=${encodeURIComponent(cafeKey())}`);
+
+    ws.onmessage = (evt) => {
+        try {
+            const msg = JSON.parse(evt.data);
+            if (msg.type === 'state') {
+                state = msg.state;
+                stateVersion = msg.version;
+                if (currentUser) {
+                    // Read-only, no in-progress form fields worth protecting — refresh immediately.
+                    if (currentTab === 'home' || currentTab === 'queue') {
+                        render(currentTab);
+                    } else {
+                        pendingRemoteUpdate = true;
+                        showRemoteUpdateBanner();
+                    }
+                }
+            }
+        } catch (e) { /* ignore malformed messages */ }
+    };
+
+    ws.onclose = () => {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = setTimeout(connectWebSocket, 2000);
+    };
+
+    ws.onerror = () => ws.close();
+}
+
+function showRemoteUpdateBanner() {
+    let bar = $('remoteUpdateBar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'remoteUpdateBar';
+        bar.style.cssText = 'position:sticky;top:0;z-index:50;background:var(--warn);color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;';
+        bar.innerHTML = `<span><i class="fas fa-sync"></i> New data came in from another computer.</span>
+            <button class="small" style="background:#fff;color:var(--warn);" onclick="render(currentTab)">Refresh view</button>`;
+        const c = $('content');
+        if (c) c.prepend(bar);
+    }
+}
+
+async function getState() {
+    // First load only — subsequent updates arrive via WebSocket.
+    await fetchState();
+    return state;
+}
+
+async function putState() {
+    const res = await fetch(apiBase() + '/api/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Cafe-Key': cafeKey() },
+        body: JSON.stringify({ state, baseVersion: stateVersion, cafe: tenantId() })
+    });
+
+    if (res.status === 401) {
+        throw new Error('This device is not recognized for this cafe (its saved key is missing or wrong). If you cleared browser storage or moved to a new device, ask an owner/admin to share this cafe\'s access key.');
+    }
+
+    if (res.status === 409) {
+        const data = await res.json();
+        state = data.state;
+        stateVersion = data.version;
+        alert('⚠️ Another computer saved changes just before you. The screen will refresh with the latest data — please repeat your last action.');
+        if (currentUser) render(currentTab);
+        throw new Error('Version conflict — local change was not saved.');
+    }
+
+    if (!res.ok) throw new Error('Could not save to the cafe server. Check the network connection.');
+
+    const data = await res.json();
+    adoptKey(data.key);
+    stateVersion = data.version;
+}
+
+// Security: Password hashing (pure JavaScript — no Web Crypto dependency).
+// crypto.subtle (like crypto.randomUUID) only works in "secure contexts"
+// (HTTPS or localhost). Since staff reach this app over plain
+// http://<lan-ip>:port from other computers, crypto.subtle is unavailable
+// there too — so hashing is done here in plain JS instead, which works
+// identically everywhere.
+function sha256Bytes(message) {
+    const K = [
+        0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+    ];
+
+    const msgLen = message.length;
+    const zeroPad = (64 - ((msgLen + 9) % 64)) % 64;          // zero bytes after the 0x80 pad byte
+    const total = msgLen + 1 + zeroPad + 8;
+    const padded = new Uint8Array(total);
+    padded.set(message, 0);
+    padded[msgLen] = 0x80;
+
+    const dv = new DataView(padded.buffer);
+    dv.setUint32(total - 8, Math.floor(msgLen / 0x20000000) >>> 0, false);  // high 32 bits of msgLen*8
+    dv.setUint32(total - 4, (msgLen << 3) >>> 0, false);                     // low  32 bits of msgLen*8
+
+    const rotr = (x, n) => ((x >>> n) | (x << (32 - n))) >>> 0;
+
+    let [h0, h1, h2, h3, h4, h5, h6, h7] =
+        [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+
+    for (let off = 0; off < total; off += 64) {
+        const w = new Array(64);
+        const blockDv = new DataView(padded.buffer, off, 64);
+        for (let i = 0; i < 16; i++) w[i] = blockDv.getUint32(i * 4, false) >>> 0;
+        for (let i = 16; i < 64; i++) {
+            const s0 = (rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3)) >>> 0;
+            const s1 = (rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10)) >>> 0;
+            w[i] = (w[i - 16] + w[i - 7] + s0 + s1) >>> 0;
+        }
+
+        let [a, b, c, d, e, f, g, h] = [h0, h1, h2, h3, h4, h5, h6, h7];
+
+        for (let i = 0; i < 64; i++) {
+            const S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;
+            const ch = ((e & f) ^ ((~e) & g)) >>> 0;
+            const temp1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+            const S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;
+            const maj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;
+            const temp2 = (S0 + maj) >>> 0;
+            h = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+        }
+
+        h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
+        h4 = (h4 + e) >>> 0; h5 = (h5 + f) >>> 0; h6 = (h6 + g) >>> 0; h7 = (h7 + h) >>> 0;
+    }
+
+    const out = new Uint8Array(32);
+    const outDv = new DataView(out.buffer);
+    [h0, h1, h2, h3, h4, h5, h6, h7].forEach((v, i) => outDv.setUint32(i * 4, v >>> 0, false));
+    return out;
+}
+function hexBytes(bytes) {
+    let s = '';
+    for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, '0');
+    return s;
+}
+
+function concatBytes(a, b) {
+    const out = new Uint8Array(a.length + b.length);
+    out.set(a, 0);
+    out.set(b, a.length);
+    return out;
+}
+
+function hmacSha256(keyBytes, msgBytes) {
+    const blockSize = 64;
+    let key = keyBytes;
+    if (key.length > blockSize) key = sha256Bytes(key);
+    if (key.length < blockSize) {
+        const padded = new Uint8Array(blockSize);
+        padded.set(key);
+        key = padded;
+    }
+    const oKeyPad = key.map(b => b ^ 0x5c);
+    const iKeyPad = key.map(b => b ^ 0x36);
+    return sha256Bytes(concatBytes(oKeyPad, sha256Bytes(concatBytes(iKeyPad, msgBytes))));
+}
+
+const PBKDF2_ITERATIONS = 20000; // used only to support legacy passwords
+
+function pbkdf2Sha256(password, salt, iterations, dkLenBytes) {
+    const enc = new TextEncoder();
+    const passwordBytes = enc.encode(password);
+    const saltBytes = enc.encode(salt);
+    const hLen = 32;
+    const blocks = Math.ceil(dkLenBytes / hLen);
+    const output = new Uint8Array(blocks * hLen);
+    for (let blockIndex = 1; blockIndex <= blocks; blockIndex++) {
+        const blockIndexBytes = new Uint8Array(4);
+        new DataView(blockIndexBytes.buffer).setUint32(0, blockIndex, false);
+        let u = hmacSha256(passwordBytes, concatBytes(saltBytes, blockIndexBytes));
+        const t = u.slice();
+        for (let i = 1; i < iterations; i++) {
+            u = hmacSha256(passwordBytes, u);
+            for (let j = 0; j < hLen; j++) t[j] ^= u[j];
+        }
+        output.set(t, (blockIndex - 1) * hLen);
+    }
+    return output.slice(0, dkLenBytes);
+}
+
+async function hash(password, salt) {
+    const enc = new TextEncoder();
+    return hexBytes(sha256Bytes(enc.encode(password + salt)));
+}
+
+async function legacyPbkdf2Hash(password, salt) {
+    return hexBytes(pbkdf2Sha256(password, salt, PBKDF2_ITERATIONS, 32));
+}
+
+async function makePw(p) {
+    // uuidv4() already falls back to crypto.getRandomValues / Math.random
+    // when crypto.randomUUID is unavailable (plain http on LAN devices).
+    const salt = uuidv4();
+    return { salt, hash: await hash(p, salt) };
+}
+
+async function verify(user, password) {
+    if (!user || !user.pw || !user.pw.salt || !user.pw.hash) return false;
+    const simpleHash = await hash(password, user.pw.salt);
+    if (user.pw.hash === simpleHash) return true;
+    // Legacy accounts created with the old PBKDF2-SHA256 (20 000) scheme still work.
+    return user.pw.hash === (await legacyPbkdf2Hash(password, user.pw.salt));
+}
+
+// ===== EXACT COUPON LEDGER =====
+// Money is stored as integer cents, so every payment/transfer is exact to 0.01 Br.
+// Visible coupon fractions are derived from this ledger and are not used for arithmetic.
+const BIRR_CENTS = 100;
+const COUPON_CENTS = COUPON_VAL * BIRR_CENTS;
+const NIGHT_COUPON_CENTS = NIGHT_COUPON_VAL * BIRR_CENTS;
+
+function moneyToCents(amountInBirr) {
+    const n = Number(amountInBirr);
+    if (!Number.isFinite(n)) return NaN;
+    return Math.round((n + Number.EPSILON) * BIRR_CENTS);
+}
+
+function syncCouponDisplay(employee) {
+    employee.regularCents = Math.max(0, Math.round(Number(employee.regularCents) || 0));
+    employee.nightCents = Math.max(0, Math.round(Number(employee.nightCents) || 0));
+    employee.coupons = employee.regularCents / COUPON_CENTS;
+    employee.nightCoupons = employee.nightCents / NIGHT_COUPON_CENTS;
+}
+
+// Migrate old records that stored floating coupon quantities.
+function ensureCouponLedger(employee) {
+    if (!employee || employee.role !== 'employee') return;
+    if (!Number.isInteger(employee.regularCents)) {
+        employee.regularCents = Math.max(0, Math.round((Number(employee.coupons) || 0) * COUPON_CENTS));
+    }
+    if (!Number.isInteger(employee.nightCents)) {
+        employee.nightCents = Math.max(0, Math.round((Number(employee.nightCoupons) || 0) * NIGHT_COUPON_CENTS));
+    }
+    syncCouponDisplay(employee);
+}
+
+function deductCouponBalance(employee, amountInBirr) {
+    const cents = moneyToCents(amountInBirr);
+    if (!employee || !Number.isInteger(cents) || cents <= 0) return false;
+
+    ensureCouponLedger(employee);
+
+    const totalCents = employee.regularCents + employee.nightCents;
+    if (totalCents < cents) return false;
+
+    // Regular coupons are consumed first, then night coupons.
+    const regularDeduction = Math.min(employee.regularCents, cents);
+    const nightDeduction = cents - regularDeduction;
+
+    employee.regularCents -= regularDeduction;
+    employee.nightCents -= nightDeduction;
+    syncCouponDisplay(employee);
+
+    // Hard guarantee: exactly the requested cents were removed.
+    return (employee.regularCents + employee.nightCents) === (totalCents - cents);
+}
+
+function transferBirrValue(sender, receiver, amountInBirr) {
+    const cents = moneyToCents(amountInBirr);
+    if (!sender || !receiver || !Number.isInteger(cents) || cents <= 0) return false;
+
+    ensureCouponLedger(sender);
+    ensureCouponLedger(receiver);
+
+    if ((sender.regularCents + sender.nightCents) < cents) return false;
+    if (!deductCouponBalance(sender, cents / BIRR_CENTS)) return false;
+
+    // Credit the exact amount as regular-coupon value.
+    receiver.regularCents += cents;
+    syncCouponDisplay(receiver);
+    return true;
+}
+
+// Record a coupon-value transfer so it shows up in the employee's order-history
+// / transfer-history view. `type` is 'EMPLOYEE' (self-requested) or 'ADMIN'
+// (bureau-authorized). Sender/receiver names are denormalised so the history
+// stays readable even if the other party is later deleted.
+function recordCouponTransfer(type, sender, receiver, amount) {
+    if (!Array.isArray(state.transfers)) state.transfers = [];
+    state.transfers.push({
+        id: genId(),
+        at: now(),
+        type: type,
+        fromId: sender ? sender.id : null,
+        fromName: sender ? sender.name : '',
+        toId: receiver ? receiver.id : null,
+        toName: receiver ? receiver.name : '',
+        amount: Number(amount) || 0,
+        actor: currentUser ? currentUser.username : 'SYSTEM'
+    });
+}
+
+function getTotalWorth(employee) {
+    if (!employee) return 0;
+    ensureCouponLedger(employee);
+    return (employee.regularCents + employee.nightCents) / BIRR_CENTS;
+}
+
+function ensureWalkinMenu() {
+    if (!state.walkinMenu || !Array.isArray(state.walkinMenu)) {
+        state.walkinMenu = (state.menu || []).map(m => ({ ...m, id: m.id }));
+    }
+}
+
+function ensureMenuSortOrder() {
+    (state.menu || []).forEach((m, i) => { if (typeof m.sortOrder !== 'number') m.sortOrder = i; });
+    ensureWalkinMenu();
+    (state.walkinMenu || []).forEach((m, i) => { if (typeof m.sortOrder !== 'number') m.sortOrder = i; });
+}
+
+function getSortedMenu(menuArr) {
+    return [...(menuArr || [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+function getMenuForCart(name) {
+    return name === 'walkin' ? getSortedMenu(state.walkinMenu) : getSortedMenu(state.menu);
+}
+
+function menuMatches(m, q) {
+    if (!q) return true;
+    return m.name.toLowerCase().includes(q.trim().toLowerCase());
+}
+
+function menuSelectHtml(menuArr, selectId, searchQuery) {
+    const available = getSortedMenu(menuArr).filter(m => m.available && menuMatches(m, searchQuery));
+    return `
+        <div class="field">
+            <label>Search Menu</label>
+            <input id="${selectId}Search" placeholder="🔍 Search dishes…" value="${esc(searchQuery)}" oninput="menuSearchInput('${selectId}', this.value)">
+        </div>
+        <div class="field">
+            <label>Select Dish</label>
+            <select id="${selectId}">
+                <option value="">-- Choose Dish --</option>
+                ${available.map(m => `<option value="${m.id}">${esc(m.name)} - ${m.price} Br</option>`).join('')}
+            </select>
+        </div>`;
+}
+
+window.menuSearchInput = function(selectId, val) {
+    if (selectId === 'empDishSelect') menuSearchQuery = val;
+    else if (selectId === 'authDishSelect') menuSearchQuery = val;
+    else if (selectId === 'walkinDishSelect') walkinMenuSearchQuery = val;
+    const tab = selectId === 'empDishSelect' ? 'order' : selectId === 'authDishSelect' ? 'cafe' : 'walkin';
+    render(tab);
+};
+
+let remainderPaymentResolver = null;
+
+function promptRemainderPayment(emp, remainder, couponUsed) {
+    if (remainder <= 0) return Promise.resolve(null);
+
+    const walletBirr = (emp.walletCents || 0) / BIRR_CENTS;
+    const summary = $('remainderModalSummary');
+    const actions = $('remainderModalActions');
+
+    summary.innerHTML = couponUsed > 0
+        ? `<b>${couponUsed.toFixed(2)} Br</b> will be paid from coupon balance.<br>Choose how to pay the remaining <b>${remainder.toFixed(2)} Br</b>:`
+        : `Choose how to pay <b>${remainder.toFixed(2)} Br</b>:`;
+
+    actions.innerHTML = '';
+
+    const addBtn = (label, method, cls) => {
+        const btn = document.createElement('button');
+        btn.className = cls || 'primary';
+        btn.style.width = '100%';
+        btn.innerHTML = label;
+        btn.onclick = () => closeRemainderModal(method);
+        actions.appendChild(btn);
+    };
+
+    if (walletBirr >= remainder) {
+        addBtn(`<i class="fas fa-wallet"></i> Wallet (${walletBirr.toFixed(2)} Br available)`, 'Wallet Balance', 'primary');
+        addBtn(`<i class="fas fa-money-bill"></i> Cash`, 'Cash', 'warn');
+    } else if (walletBirr > 0) {
+        const cashPart = round(remainder - walletBirr);
+        addBtn(`<i class="fas fa-wallet"></i> Wallet ${walletBirr.toFixed(2)} Br + Cash ${cashPart.toFixed(2)} Br`, 'Wallet Partial', 'primary');
+        addBtn(`<i class="fas fa-money-bill"></i> Cash (${remainder.toFixed(2)} Br)`, 'Cash', 'warn');
+    } else {
+        addBtn(`<i class="fas fa-money-bill"></i> Cash (${remainder.toFixed(2)} Br)`, 'Cash', 'warn');
+    }
+
+    $('remainderModal').classList.remove('hidden');
+
+    return new Promise(resolve => {
+        remainderPaymentResolver = resolve;
+    });
+}
+
+function closeRemainderModal(method) {
+    $('remainderModal').classList.add('hidden');
+    if (remainderPaymentResolver) {
+        remainderPaymentResolver(method);
+        remainderPaymentResolver = null;
+    }
+}
+
+function applyMixedPayment(emp, total, remainderMethod) {
+    if (!remainderMethod) return null;
+
+    ensureCouponLedger(emp);
+    const couponWorth = getTotalWorth(emp);
+    const couponUsed = Math.min(couponWorth, total);
+    const remainder = round(total - couponUsed);
+
+    if (couponUsed > 0 && !deductCouponBalance(emp, couponUsed)) return null;
+
+    let walletUsed = 0, cashUsed = 0;
+    if (remainder > 0) {
+        const walletBirr = (emp.walletCents || 0) / BIRR_CENTS;
+
+        if (remainderMethod === 'Wallet Balance') {
+            const walletPay = Math.min(walletBirr, remainder);
+            if (walletPay > 0) {
+                emp.walletCents -= moneyToCents(walletPay);
+                walletUsed = walletPay;
+            }
+            cashUsed = round(remainder - walletPay);
+        } else if (remainderMethod === 'Wallet Partial') {
+            if (walletBirr > 0) {
+                emp.walletCents = 0;
+                walletUsed = walletBirr;
+            }
+            cashUsed = round(remainder - walletUsed);
+        } else {
+            cashUsed = remainder;
+        }
+    }
+
+    return { couponUsed, walletUsed, cashUsed };
+}
+
+function paymentLabel(parts) {
+    const labels = [];
+    if (parts.couponUsed > 0) labels.push(`Coupon ${parts.couponUsed.toFixed(2)} Br`);
+    if (parts.walletUsed > 0) labels.push(`Wallet ${parts.walletUsed.toFixed(2)} Br`);
+    if (parts.cashUsed > 0) labels.push(`Cash ${parts.cashUsed.toFixed(2)} Br`);
+    return labels.join(' + ') || 'Cash';
+}
+
+function refundOrderPayment(emp, order) {
+    if (!emp) return;
+    ensureCouponLedger(emp);
+    if (order.couponPart > 0) {
+        emp.regularCents += moneyToCents(order.couponPart);
+        syncCouponDisplay(emp);
+    }
+    if (order.walletPart > 0) {
+        emp.walletCents = (emp.walletCents || 0) + moneyToCents(order.walletPart);
+    }
+    if (!order.couponPart && !order.walletPart) {
+        if (order.payment === 'Coupon Balance') {
+            emp.regularCents += moneyToCents(order.total);
+            syncCouponDisplay(emp);
+        } else if (order.payment === 'Wallet Balance') {
+            emp.walletCents = (emp.walletCents || 0) + moneyToCents(order.total);
+        }
+    }
+}
+
+function pushOrdersFromCart(cart, opts) {
+    const groupId = genId();
+    const total = cartTotal(cart);
+    const parts = opts.paymentParts;
+    const paymentLabelStr = parts ? paymentLabel(parts) : opts.payment;
+
+    cart.forEach(c => {
+        const itemTotal = c.price * c.qty;
+        let couponPart = 0, walletPart = 0, cashPart = 0;
+        if (parts && total > 0) {
+            const ratio = itemTotal / total;
+            couponPart = round(parts.couponUsed * ratio);
+            walletPart = round(parts.walletUsed * ratio);
+            cashPart = round(parts.cashUsed * ratio);
+        }
+        state.orders.push({
+            id: genId(),
+            groupId,
+            at: now(),
+            customer: opts.customer,
+            employeeId: opts.employeeId,
+            itemId: c.id,
+            itemName: c.qty > 1 ? `${c.name} x${c.qty}` : c.name,
+            total: itemTotal,
+            payment: paymentLabelStr,
+            couponPart,
+            walletPart,
+            cashPart,
+            served: false,
+            authorizedBy: opts.authorizedBy || undefined
+        });
+    });
+}
+
+// Multi-item Cart Helpers
+function getCart(name) {
+    return name === 'employee' ? employeeCart : name === 'auth' ? authCart : walkinCart;
+}
+
+function cartTotal(cart) {
+    return cart.reduce((a, c) => a + c.price * c.qty, 0);
+}
+
+function cartHtml(name) {
+    const cart = getCart(name);
+    if (!cart.length) return '<div class="item sub">Cart is empty — add dishes below.</div>';
+    return cart.map(c => `
+        <div class="item">
+            <span><b>${esc(c.name)}</b> <span class="pill">x${c.qty}</span> <span class="pill">${(c.price * c.qty).toFixed(2)} Br</span></span>
+            <button class="small danger" onclick="removeCartItem('${name}','${c.id}')"><i class="fas fa-times"></i></button>
+        </div>
+    `).join('');
+}
+
+window.removeCartItem = function(name, dishId) {
+    const cart = getCart(name);
+    const idx = cart.findIndex(c => c.id === dishId);
+    if (idx > -1) cart.splice(idx, 1);
+    const tab = name === 'employee' ? 'order' : name === 'walkin' ? 'walkin' : 'cafe';
+    render(tab);
+};
+
+window.addCartItem = function(name, selectId, qtyId) {
+    const cart = getCart(name);
+    const dishId = $(selectId).value;
+    const qtyInput = $(qtyId);
+    const qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : 1, 10) || 1);
+    if (!dishId) return alert('Select a dish first.');
+    const menuArr = getMenuForCart(name);
+    const dish = menuArr.find(m => m.id === dishId);
+    if (!dish) return;
+    const existing = cart.find(c => c.id === dishId);
+    if (existing) existing.qty += qty; else cart.push({ id: dish.id, name: dish.name, price: dish.price, qty });
+    const tab = name === 'employee' ? 'order' : name === 'walkin' ? 'walkin' : 'cafe';
+    render(tab);
+};
+
+// Employee Search Helpers
+function employeeMatches(e, q) {
+    if (!q) return true;
+    const s = String(q).trim().toLowerCase();
+    // Null-safe: one malformed record must never break the whole live search.
+    return String(e.name || '').toLowerCase().includes(s) || String(e.username || '').toLowerCase().includes(s);
+}
+
+// Employees sorted alphabetically by name (A → Z). Used everywhere employee lists are shown.
+function employeesByName(emps) {
+    return [...(emps || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+}
+
+// Deprecated — kept for any remaining callers but no longer used in main views
+function empSelectOptionsHtml(emps, includeBalance) {
+    return '<option value="">-- Select Employee --</option>' + emps.map(e => `<option value="${e.id}">${esc(e.name)}${includeBalance ? ` (${getTotalWorth(e).toFixed(2)} Br${e.status === 'On Leave' ? ' - ON LEAVE' : ''})` : ''}</option>`).join('');
+}
+
+// Live employee card picker — renders clickable cards instead of a dropdown.
+// containerId: wrapper div id  |  pickerId: unique prefix for onclick  |  selectedId: currently selected emp id
+function empPickerHtml(emps, query, containerId, pickerId, selectedId, showBalance) {
+    const filtered = employeesByName(query ? emps.filter(e => employeeMatches(e, query)) : emps);
+    const cards = filtered.length === 0
+        ? `<div class="emp-no-results"><i class="fas fa-search"></i> No employees match "${esc(query)}"</div>`
+        : filtered.map(e => {
+            const isSelected = e.id === selectedId;
+            const worth = getTotalWorth(e);
+            const onLeave = e.status === 'On Leave';
+            return `<div class="emp-card${isSelected ? ' selected' : ''}${onLeave ? ' on-leave' : ''}" onclick="${pickerId}SelectEmp('${e.id}')" title="${esc(e.name)} (${esc(e.username)})">
+                <i class="fas fa-check emp-card-check"></i>
+                <div class="emp-card-name">${esc(e.name)}</div>
+                <div class="emp-card-meta">@${esc(e.username)}${onLeave ? ' · <span style="color:var(--danger)">On Leave</span>' : ''}</div>
+                ${showBalance ? `<div class="emp-card-balance">${worth.toFixed(2)} Br</div>` : ''}
+            </div>`;
+        }).join('');
+    return `
+        <div class="emp-search-wrap">
+            <input class="emp-search-input" id="${containerId}SearchInput" placeholder="🔍 Search by name or username…" value="${esc(query)}" oninput="${pickerId}OnSearch(this.value)">
+            <button class="emp-search-clear${query ? ' visible' : ''}" id="${containerId}ClearBtn" onclick="${pickerId}ClearSearch()" title="Clear search"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="emp-picker-list" id="${containerId}PickerList">${cards}</div>
+    `;
+}
+
+function hrRosterItemsHtml(emps) {
+    emps = employeesByName(emps);
+    if (!emps.length) return '<div class="hr-emp-card sub">No employees match your search.</div>';
+    return emps.map(e => `
+        <div class="hr-emp-card">
+            <div class="hr-emp-top">
+                <div>
+                    <b>${esc(e.name)}</b>
+                    <span class="pill">${esc(e.username)}</span>
+                    <span class="pill ${e.status === 'At Work' ? 'ok' : 'bad'}">${e.status}</span>
+                    <div class="sub" style="margin-top:4px;">
+                        Regular: <b>${e.coupons.toFixed(2)}</b> coupons (${(e.coupons * COUPON_VAL).toFixed(2)} Br)
+                        &nbsp;|&nbsp; Night: <b>${(e.nightCoupons || 0).toFixed(2)}</b> (${((e.nightCoupons || 0) * NIGHT_COUPON_VAL).toFixed(2)} Br)
+                        &nbsp;|&nbsp; Wallet: <b>${((e.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br</b>
+                        &nbsp;|&nbsp; Total Coupons: <b style="color:var(--primary)">${getTotalWorth(e).toFixed(2)} Br</b>
+                    </div>
+                </div>
+            </div>
+            <div class="hr-emp-actions">
+                <button class="small success" onclick="grantRegularCoupon('${e.id}')"><i class="fas fa-ticket-alt"></i> +1 Regular Coupon</button>
+                <button class="small primary" title="Clear this week's leftover coupons and notify the Cafe Admin to deposit them into this employee's wallet" onclick="resetWeeklyCoupons('${e.id}')"><i class="fas fa-sync-alt"></i> Weekly Reset &amp; Sweep</button>
+                ${e.nightRequested ? `
+                    <button class="small night" onclick="approveNightCoupon('${e.id}')"><i class="fas fa-moon"></i> Approve Night Bonus</button>
+                ` : `
+                    <button class="small outline" onclick="grantNightCoupon('${e.id}')"><i class="fas fa-moon"></i> +1 Night Coupon</button>
+                `}
+                <button class="small ${e.status === 'At Work' ? 'warn' : 'success'}" onclick="toggleWorkStatus('${e.id}')">
+                    <i class="fas fa-${e.status === 'At Work' ? 'pause' : 'play'}"></i>
+                    ${e.status === 'At Work' ? 'Set Leave' : 'Set Work'}
+                </button>
+                <button class="small info" onclick="openEditEmployeeModal('${e.id}')"><i class="fas fa-user-edit"></i> Edit Profile</button>
+                ${currentUser.role === 'superadmin' ? `
+                <button class="small danger" onclick="deleteEmployee('${e.id}')"><i class="fas fa-trash"></i> Delete</button>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Initial Seed Data
+function seed() {
+    return {
+        version: 7,
+        siteId: genId(),
+        createdAt: now(),
+        lastModified: now(),
+        employees: [],
+        menu: [],
+        walkinMenu: [],
+        orders: [],
+        transfers: [],
+        audit: [],
+        dailyQuote: '',
+        lastWeeklyRefresh: null,
+        weeklyArchives: []
+    };
+}
+
+async function initialize() {
+    await fetchState();
+    if (!state) {
+        state = seed();
+        state.siteId = tenantId(); // keep café site id in sync with its tenant
+        const defs = [
+            ['superadmin', 'Super Admin', 'superadmin'],
+            ['admin', 'Cafe Admin', 'admin']
+        ];
+        for (const [u, n, r] of defs) {
+            const pw = await makePw('admin123');
+            state.employees.push({
+                id: genId(),
+                username: u,
+                name: n,
+                role: r,
+                status: 'At Work',
+                coupons: r === 'employee' ? 5 : 0,
+                nightCoupons: 0,
+                regularCents: r === 'employee' ? 5 * COUPON_CENTS : 0,
+                nightCents: 0,
+                walletCents: 0,
+                walletDepositRequested: 0,
+                nightRequested: false,
+                pw
+            });
+        }
+        state.audit.push({ id: genId(), at: now(), actor: 'SYSTEM', action: 'DATABASE_INITIALIZED' });
+        state.employees.forEach(e => { ensureCouponLedger(e); if (typeof e.walletCents !== 'number') e.walletCents = 0; if (typeof e.walletDepositRequested !== 'number') e.walletDepositRequested = 0; if (typeof e.couponTransferRequested !== 'number') e.couponTransferRequested = 0; if (typeof e.couponTransferToId !== 'string') e.couponTransferToId = null; });
+        await putState();
+    } else {
+        let migrated = false;
+        state.employees.forEach(e => {
+            ensureCouponLedger(e);
+            if (typeof e.walletCents !== 'number') { e.walletCents = 0; migrated = true; }
+            if (typeof e.walletDepositRequested !== 'number') { e.walletDepositRequested = 0; migrated = true; }
+            if (typeof e.couponTransferRequested !== 'number') { e.couponTransferRequested = 0; migrated = true; }
+            if (typeof e.couponTransferToId !== 'string') { e.couponTransferToId = null; migrated = true; }
+        });
+        ensureWalkinMenu();
+        ensureMenuSortOrder();
+        if (!state.dailyQuote) { state.dailyQuote = ''; migrated = true; }
+        if (!state.lastWeeklyRefresh) { state.lastWeeklyRefresh = null; }
+        if (!state.weeklyArchives) { state.weeklyArchives = []; migrated = true; }
+        if (!Array.isArray(state.transfers)) { state.transfers = []; migrated = true; }
+        if (migrated) await putState();
+    }
+    connectWebSocket();
+}
+
+// Helper functions for weekly management
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return { year: d.getUTCFullYear(), week: weekNo };
+}
+
+window.archiveCurrentWeek = async function(requireConfirmation = true) {
+    if (state.orders.length === 0) return alert('No orders to archive.');
+    
+    if (requireConfirmation && !confirm('This will archive all current week orders and start a fresh week. Continue?')) return;
+    
+    const nowDate = new Date();
+    const weekStart = new Date(nowDate);
+    weekStart.setDate(nowDate.getDate() - nowDate.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const weekLabel = `Week of ${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
+    
+    const totalRev = state.orders.reduce((a, o) => a + o.total, 0);
+    const cashRev = state.orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+    const couponRev = state.orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+    const walletRev = state.orders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+    
+    const archive = {
+        id: genId(),
+        weekLabel,
+        archivedAt: now(),
+        orders: [...state.orders],
+        transfers: [...(state.transfers || [])],
+        summary: {
+            totalRevenue: totalRev,
+            cashRevenue: cashRev,
+            couponRevenue: couponRev,
+            walletRevenue: walletRev,
+            orderCount: state.orders.length,
+            transferCount: (state.transfers || []).length
+        }
+    };
+    
+    state.weeklyArchives.push(archive);
+    state.orders = [];
+    state.transfers = [];
+    state.lastWeeklyRefresh = now();
+    
+    await save('WEEK_ARCHIVED');
+    if (requireConfirmation) {
+        alert(`✅ Archived ${archive.summary.orderCount} orders as "${weekLabel}". Fresh week started.`);
+        render('reports');
+    }
+};
+
+window.checkWeeklyRollover = async function() {
+    if (!state.lastWeeklyRefresh) return;
+    
+    const lastRefresh = new Date(state.lastWeeklyRefresh);
+    const nowDate = new Date();
+    
+    const lastWeek = getWeekNumber(lastRefresh);
+    const currentWeek = getWeekNumber(nowDate);
+    
+    if (lastWeek.year !== currentWeek.year || lastWeek.week !== currentWeek.week) {
+        if (state.orders.length > 0) {
+            console.log('Auto-archiving previous week orders...');
+            await archiveCurrentWeek(false); // No confirmation for auto-archiving
+        } else {
+            state.lastWeeklyRefresh = now();
+            await save('WEEK_ROLLOVER');
+        }
+    }
+};
+
+// Auto-check weekly rollover periodically (every hour)
+setInterval(checkWeeklyRollover, 3600000);
+
+// DOCX Report Generator (HTML-based for Word compatibility)
+function generateDocxReport(archive) {
+    const ordersByDate = {};
+    archive.orders.forEach(o => {
+        const date = new Date(o.at).toLocaleDateString();
+        if (!ordersByDate[date]) ordersByDate[date] = [];
+        ordersByDate[date].push(o);
+    });
+
+    const sortedDates = Object.keys(ordersByDate).sort((a, b) => new Date(b) - new Date(a));
+
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${archive.weekLabel} - Habesha Cafe Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #8B4513; border-bottom: 2px solid #8B4513; padding-bottom: 10px; }
+        h2 { color: #657184; margin-top: 30px; }
+        h3 { color: #657184; margin-top: 20px; }
+        .summary { background: #f5f7fb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .summary-item { margin: 10px 0; font-size: 16px; }
+        .summary-item strong { color: #8B4513; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+        td { border: 1px solid #dce2ea; padding: 10px; }
+        tr:nth-child(even) { background: #f8fbff; }
+        .date-section { margin: 30px 0; page-break-after: always; }
+        .date-section:last-child { page-break-after: auto; }
+        .date-header { background: #657184; color: white; padding: 10px; font-weight: bold; }
+        .daily-total { text-align: right; font-weight: bold; color: #8B4513; margin-top: 10px; }
+        .time-period { background: #e3f2fd; padding: 10px; margin: 10px 0; border-left: 4px solid #0d47a1; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+    <h1>☕ Habesha Cafe Weekly Report</h1>
+    <h2>${archive.weekLabel}</h2>
+    
+    <div class="summary">
+        <h3>Financial Summary</h3>
+        <div class="summary-item"><strong>Total Revenue:</strong> ${archive.summary.totalRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Cash Revenue:</strong> ${archive.summary.cashRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Coupon Revenue:</strong> ${archive.summary.couponRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Wallet Revenue:</strong> ${archive.summary.walletRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Total Orders:</strong> ${archive.summary.orderCount}</div>
+        <div class="summary-item"><strong>Archived:</strong> ${new Date(archive.archivedAt).toLocaleString()}</div>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2>Detailed Order Breakdown</h2>
+`;
+
+    sortedDates.forEach((date, index) => {
+        const dayOrders = ordersByDate[date];
+        const dayTotal = dayOrders.reduce((a, o) => a + o.total, 0);
+        const cashTotal = dayOrders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+        const couponTotal = dayOrders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || 0), 0);
+        const walletTotal = dayOrders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+        
+        html += `
+    <div class="date-section">
+        <div class="date-header">${date}</div>
+        <div class="time-period">
+            <strong>Daily Summary:</strong> Total: ${dayTotal.toFixed(2)} Br | Cash: ${cashTotal.toFixed(2)} Br | Coupon: ${couponTotal.toFixed(2)} Br | Wallet: ${walletTotal.toFixed(2)} Br | Orders: ${dayOrders.length}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Payment</th>
+                    <th>Amount</th>
+                    <th>Coupon Used</th>
+                    <th>Wallet Used</th>
+                </tr>
+            </thead>
+            <tbody>
+`;
+        
+        dayOrders.forEach(o => {
+            html += `
+                <tr>
+                    <td>${new Date(o.at).toLocaleTimeString()}</td>
+                    <td>${o.customer}</td>
+                    <td>${o.itemName}</td>
+                    <td>${o.payment}</td>
+                    <td>${o.total.toFixed(2)} Br</td>
+                    <td>${(o.couponPart || 0).toFixed(2)} Br</td>
+                    <td>${(o.walletPart || 0).toFixed(2)} Br</td>
+                </tr>`;
+        });
+        
+        html += `
+            </tbody>
+        </table>
+    </div>`;
+    });
+
+    html += `
+    <div style="margin-top: 50px; text-align: center; color: #657184; font-size: 12px;">
+        Generated by Habesha Cafe Management System
+    </div>
+</body>
+</html>`;
+
+    return html;
+}
+
+function generateFinancialDocxReport(report, reportType) {
+    const ordersByDate = {};
+    report.orders.forEach(o => {
+        const date = new Date(o.at).toLocaleDateString();
+        if (!ordersByDate[date]) ordersByDate[date] = [];
+        ordersByDate[date].push(o);
+    });
+
+    const sortedDates = Object.keys(ordersByDate).sort((a, b) => new Date(b) - new Date(a));
+
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${reportType} - Habesha Cafe Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #8B4513; border-bottom: 2px solid #8B4513; padding-bottom: 10px; }
+        h2 { color: #657184; margin-top: 30px; }
+        h3 { color: #657184; margin-top: 20px; }
+        .summary { background: #f5f7fb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .summary-item { margin: 10px 0; font-size: 16px; }
+        .summary-item strong { color: #8B4513; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+        td { border: 1px solid #dce2ea; padding: 10px; }
+        tr:nth-child(even) { background: #f8fbff; }
+        .date-section { margin: 30px 0; page-break-after: always; }
+        .date-section:last-child { page-break-after: auto; }
+        .date-header { background: #657184; color: white; padding: 10px; font-weight: bold; }
+        .daily-total { text-align: right; font-weight: bold; color: #8B4513; margin-top: 10px; }
+        .time-period { background: #e3f2fd; padding: 10px; margin: 10px 0; border-left: 4px solid #0d47a1; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+    <h1>☕ Habesha Cafe ${reportType}</h1>
+    
+    <div class="summary">
+        <h3>Financial Summary</h3>
+        <div class="summary-item"><strong>Report Type:</strong> ${reportType}</div>
+        <div class="summary-item"><strong>Period:</strong> ${new Date(report.periodStart).toLocaleDateString()} - ${new Date(report.periodEnd).toLocaleDateString()}</div>
+        <div class="summary-item"><strong>Generated:</strong> ${new Date(report.generatedAt).toLocaleString()}</div>
+        <div class="summary-item"><strong>Total Revenue:</strong> ${report.totalRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Cash Revenue:</strong> ${report.cashRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Coupon Revenue:</strong> ${report.couponRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Wallet Revenue:</strong> ${report.walletRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Total Orders:</strong> ${report.orders.length}</div>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2>Detailed Order Breakdown</h2>
+`;
+
+    sortedDates.forEach((date, index) => {
+        const dayOrders = ordersByDate[date];
+        const dayTotal = dayOrders.reduce((a, o) => a + o.total, 0);
+        const cashTotal = dayOrders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+        const couponTotal = dayOrders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || 0), 0);
+        const walletTotal = dayOrders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+        
+        html += `
+    <div class="date-section">
+        <div class="date-header">${date}</div>
+        <div class="time-period">
+            <strong>Daily Summary:</strong> Total: ${dayTotal.toFixed(2)} Br | Cash: ${cashTotal.toFixed(2)} Br | Coupon: ${couponTotal.toFixed(2)} Br | Wallet: ${walletTotal.toFixed(2)} Br | Orders: ${dayOrders.length}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Payment</th>
+                    <th>Amount</th>
+                    <th>Coupon Used</th>
+                    <th>Wallet Used</th>
+                </tr>
+            </thead>
+            <tbody>
+`;
+        
+        dayOrders.forEach(o => {
+            html += `
+                <tr>
+                    <td>${new Date(o.at).toLocaleTimeString()}</td>
+                    <td>${o.customer}</td>
+                    <td>${o.itemName}</td>
+                    <td>${o.payment}</td>
+                    <td>${o.total.toFixed(2)} Br</td>
+                    <td>${(o.couponPart || 0).toFixed(2)} Br</td>
+                    <td>${(o.walletPart || 0).toFixed(2)} Br</td>
+                </tr>`;
+        });
+        
+        html += `
+            </tbody>
+        </table>
+    </div>`;
+    });
+
+    html += `
+    <div style="margin-top: 50px; text-align: center; color: #657184; font-size: 12px;">
+        Generated by Habesha Cafe Management System
+    </div>
+</body>
+</html>`;
+
+    return html;
+}
+
+// DOCX Report Generator for the aggregated daily items summary (HTML-based for Word compatibility).
+function generateDailyItemsDocxReport(orders) {
+    const ordersByDate = {};
+    orders.forEach(o => {
+        const date = new Date(o.at).toLocaleDateString();
+        if (!ordersByDate[date]) ordersByDate[date] = [];
+        ordersByDate[date].push(o);
+    });
+
+    const sortedDates = Object.keys(ordersByDate).sort((a, b) => new Date(b) - new Date(a));
+
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Items Report - Habesha Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #8B4513; border-bottom: 2px solid #8B4513; padding-bottom: 10px; }
+        h2 { color: #657184; margin-top: 30px; }
+        .summary { background: #f5f7fb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .summary-item { margin: 10px 0; font-size: 16px; }
+        .summary-item strong { color: #8B4513; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+        td { border: 1px solid #dce2ea; padding: 10px; }
+        tr:nth-child(even) { background: #f8fbff; }
+        .date-section { margin: 30px 0; page-break-after: always; }
+        .date-section:last-child { page-break-after: auto; }
+        .date-header { background: #657184; color: white; padding: 10px; font-weight: bold; }
+        .time-period { background: #e3f2fd; padding: 10px; margin: 10px 0; border-left: 4px solid #0d47a1; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+    <h1>☕ Habesha Cafe Daily Items Report</h1>
+
+    <div class="summary">
+        <h3>Summary</h3>
+        <div class="summary-item"><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+        <div class="summary-item"><strong>Total Orders:</strong> ${orders.length}</div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>Items Ordered Per Day</h2>
+`;
+
+    sortedDates.forEach(date => {
+        const dayOrders = ordersByDate[date];
+        const dayTotal = dayOrders.reduce((a, o) => a + o.total, 0);
+        const items = aggregateItemsFromOrders(dayOrders);
+        const totalUnits = items.reduce((a, it) => a + it.qty, 0);
+
+        html += `
+    <div class="date-section">
+        <div class="date-header">${date}</div>
+        <div class="time-period">
+            <strong>Daily Summary:</strong> Orders: ${dayOrders.length} | Total: ${dayTotal.toFixed(2)} Br | Distinct Items: ${items.length} | Units Sold: ${totalUnits}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Menu Item</th>
+                    <th>Quantity Ordered</th>
+                </tr>
+            </thead>
+            <tbody>
+`;
+        items.forEach((it, i) => {
+            html += `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${esc(it.name)}</td>
+                    <td><b>${it.qty}</b></td>
+                </tr>`;
+        });
+        html += `
+                <tr>
+                    <td colspan="2" style="text-align:right;"><b>Total items sold</b></td>
+                    <td><b>${totalUnits}</b></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>`;
+    });
+
+    html += `
+    <div style="margin-top: 50px; text-align: center; color: #657184; font-size: 12px;">
+        Generated by Habesha Cafe Management System
+    </div>
+</body>
+</html>`;
+
+    return html;
+}
+
+window.exportCurrentWeekReport = function() {
+    if (currentUser.role !== 'admin') return alert('Only Cafe Admin can export financial reports.');
+    if (state.orders.length === 0) return alert('No orders to export.');
+    
+    const nowDate = new Date();
+    const weekStart = new Date(nowDate);
+    weekStart.setDate(nowDate.getDate() - nowDate.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const weekLabel = `Week of ${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
+    
+    const totalRev = state.orders.reduce((a, o) => a + o.total, 0);
+    const cashRev = state.orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+    const couponRev = state.orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+    const walletRev = state.orders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+    
+    const currentArchive = {
+        weekLabel,
+        archivedAt: now(),
+        orders: [...state.orders],
+        summary: {
+            totalRevenue: totalRev,
+            cashRevenue: cashRev,
+            couponRevenue: couponRev,
+            walletRevenue: walletRev,
+            orderCount: state.orders.length
+        }
+    };
+    
+    // Ask user for export format
+    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+    
+    if (format) {
+        const docxContent = generateDocxReport(currentArchive);
+        downloadFile(`habesha_current_week_${weekLabel.replace(/\s+/g, '_')}.docx`, docxContent);
+        alert(`✅ Exported current week as DOCX: ${weekLabel}`);
+    } else {
+        const report = {
+            type: 'CURRENT_WEEKLY_REPORT',
+            weekLabel,
+            exportDate: now(),
+            orders: currentArchive.orders,
+            summary: currentArchive.summary
+        };
+        downloadFile(`habesha_current_week_${weekLabel.replace(/\s+/g, '_')}.json`, JSON.stringify(report, null, 2));
+        alert(`✅ Exported current week as JSON: ${weekLabel}`);
+    }
+};
+
+async function save(action) {
+    state.lastModified = now();
+    if (action) state.audit.push({ id: genId(), at: now(), actor: currentUser?.username || 'SYSTEM', action });
+    await putState();
+}
+
+function roleName(r) {
+    return { superadmin: 'Super Admin', admin: 'Cafe Admin', employee: 'Employee', hr: 'HR Manager' }[r] || r;
+}
+
+// Role Permissions
+function can(r, p) {
+    const m = {
+        employee: ['home', 'order', 'history', 'profile'],
+        admin: ['home', 'cafe', 'walkin', 'wallet', 'queue', 'sync', 'reports', 'profile'],
+        superadmin: ['home', 'order', 'hr', 'sync', 'reports', 'profile'],
+        hr: ['home', 'hr', 'sync', 'reports', 'profile']
+    };
+    return m[r]?.includes(p);
+}
+
+function renderTabs() {
+    const all = [
+        ['home', 'Dashboard'],
+        ['order', 'My Orders'],
+        ['history', 'Order History'],
+        ['cafe', 'Cafe Bureau'],
+        ['walkin', 'Walk-in Orders'],
+        ['wallet', 'Wallet Approvals'],
+        ['queue', 'Order Queue'],
+        ['hr', 'HR & Night Approvals'],
+        ['sync', 'USB Sync'],
+        ['reports', 'Reports'],
+        ['profile', 'My Profile']
+    ];
+    $('tabs').innerHTML = all
+        .filter(x => can(currentUser.role, x[0]))
+        .map(x => `<button class="tab small" data-tab="${x[0]}">${x[1]}</button>`)
+        .join('');
+    
+    $('tabs').querySelectorAll('.tab').forEach(b => {
+        b.onclick = () => render(b.dataset.tab);
+    });
+}
+
+function render(tab = 'home') {
+    // Reset search state when navigating away from the relevant tab
+    if (currentTab !== tab) {
+        if (currentTab === 'cafe') { cafeEmpSearchQuery = ''; }
+        if (currentTab === 'hr')   { hrEmpSearchQuery = ''; }
+    }
+    currentTab = tab;
+    pendingRemoteUpdate = false;
+    renderTabs();
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    const c = $('content');
+
+    if (tab === 'home') c.innerHTML = homeView();
+    if (tab === 'order') c.innerHTML = orderView();
+    if (tab === 'history') c.innerHTML = historyView();
+    if (tab === 'cafe') c.innerHTML = cafeView();
+    if (tab === 'walkin') c.innerHTML = walkinView();
+    if (tab === 'wallet') c.innerHTML = walletView();
+    if (tab === 'queue') c.innerHTML = queueView();
+    if (tab === 'hr') c.innerHTML = hrView();
+    if (tab === 'sync') c.innerHTML = syncView();
+    if (tab === 'reports') c.innerHTML = reportsView();
+    if (tab === 'profile') c.innerHTML = profileView();
+
+    bindTabActions(tab);
+}
+
+// Views
+function homeView() {
+    const rev = state.orders.reduce((a, o) => a + o.total, 0);
+    const open = state.orders.filter(o => !o.served).length;
+    const cashRev = state.orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+    const couponRev = state.orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+    const walkinOrders = state.orders.filter(o => o.customer === 'Walk-in Customer').length;
+
+    let rankingHtml = '';
+    const ranks = state.employees.filter(e => e.role === 'employee').map(e => {
+        const empOrders = state.orders.filter(o => o.employeeId === e.id);
+        return { id: e.id, name: e.name, orders: empOrders.length, spent: empOrders.reduce((acc, o) => acc + o.total, 0) };
+    }).sort((a, b) => b.spent - a.spent || b.orders - a.orders); // Rank by amount spent (top spender = King)
+
+    if (currentUser.role === 'employee') {
+        const myIndex = ranks.findIndex(r => r.id === currentUser.id);
+        const myRank = myIndex !== -1 ? myIndex + 1 : '-';
+        rankingHtml = `
+            <div class="card wide">
+                <div class="title"><i class="fas fa-trophy"></i> My Ranking</div>
+                <div style="font-size: 1.1rem; padding: 10px 0; text-align: center; color: var(--primary);">
+                    You are currently ranked <b>#${myRank}</b> out of ${ranks.length} employees.
+                </div>
+            </div>
+        `;
+    } else {
+        rankingHtml = `
+            <div class="card wide">
+                <div class="title"><i class="fas fa-trophy"></i> Employee Ranking</div>
+                <div class="sub">Ranked by total amount spent — the top spender is crowned King</div>
+                <div class="list">
+                    ${ranks.map((r, i) => `
+                        <div class="item">
+                            <span><b>#${i+1}${i === 0 ? ' <i class="fas fa-crown" style="color:#d4af37;" title="King"></i>' : ''} ${esc(r.name)}</b></span>
+                            <span class="pill"><b>${r.spent.toFixed(2)} Br</b> &nbsp;·&nbsp; ${r.orders} orders</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="grid">
+            ${currentUser.role === 'employee' ? `<div class="card wide" style="padding: 0; border: none; box-shadow: none; background: transparent;"><img src="cafe-banner.jpg" style="width: 100%; height: auto; max-height: 450px; object-fit: contain; border-radius: var(--radius); display: block;"></div>` : ''}
+            ${state.dailyQuote ? `
+            <div class="card wide">
+                <div class="title"><i class="fas fa-quote-left"></i> Quote of the Day</div>
+                <div class="quote-card">${esc(state.dailyQuote)}</div>
+            </div>` : ''}
+            <div class="card wide">
+                <div class="title"><i class="fas fa-home"></i> Welcome, ${esc(currentUser.name)}</div>
+                <div class="sub">Role: <b>${roleName(currentUser.role)}</b> • Offline-first workstation with <b>fractional coupon support</b> (exact Birr values).</div>
+            </div>
+            <div class="card wide">
+                <div class="stats">
+                    ${currentUser.role === 'admin' ? `
+                    <div class="stat"><span>Total Orders</span><b>${state.orders.length}</b></div>
+                    <div class="stat"><span>Walk-in Orders</span><b>${walkinOrders}</b></div>
+                    <div class="stat"><span>Cash Revenue</span><b>${cashRev.toFixed(2)} Br</b></div>
+                    <div class="stat"><span>Coupon Revenue</span><b>${couponRev.toFixed(2)} Br</b></div>
+                    <div class="stat"><span>Total Revenue</span><b>${rev.toFixed(2)} Br</b></div>
+                    ` : currentUser.role === 'superadmin' || currentUser.role === 'hr' ? `
+                    <div class="stat"><span>Total Orders</span><b>${state.orders.length}</b></div>
+                    ` : ''}
+                    <div class="stat"><span>Pending Orders</span><b>${open}</b></div>
+                    ${currentUser.role !== 'employee' ? `<div class="stat"><span>Employees</span><b>${state.employees.filter(e => e.role === 'employee').length}</b></div>` : ''}
+                </div>
+            </div>
+            ${rankingHtml}
+        </div>`;
+}
+
+function orderView() {
+    const emp = state.employees.find(e => e.id === currentUser.id);
+    if (!emp) return `<div class="card wide"><div class="notice">⚠️ Your employee record was not found. Please log out and log back in.</div></div>`;
+    const totalWorth = getTotalWorth(emp);
+    const ordersAhead = state.orders.filter(o => o.employeeId === currentUser.id && !o.served).length;
+
+    return `
+        <div class="grid">
+            <div class="card">
+                <div class="title"><i class="fas fa-utensils"></i> Place Order</div>
+                <div class="row">
+                    ${menuSelectHtml(state.menu, 'empDishSelect', menuSearchQuery)}
+                    <div class="field" style="max-width:90px;">
+                        <label>Qty</label>
+                        <input id="empDishQty" type="number" min="1" value="1">
+                    </div>
+                    <button id="empAddToCartBtn" class="btn" style="margin-top: 18px;"><i class="fas fa-cart-plus"></i> Add</button>
+                </div>
+                <div class="list" style="margin-top: 10px;">
+                    ${cartHtml('employee')}
+                </div>
+                <div class="sub" style="font-weight:700; margin-top:6px;">Cart Total: ${cartTotal(employeeCart).toFixed(2)} Br</div>
+                <div class="row" style="margin-top: 10px;">
+                    <button id="placeCouponOrderBtn" class="success"><i class="fas fa-ticket-alt"></i> Coupons</button>
+                    <button id="placeWalletOrderBtn" class="primary"><i class="fas fa-wallet"></i> Wallet</button>
+                    <button id="placeCashOrderBtn" class="warn"><i class="fas fa-money-bill"></i> Cash</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="title"><i class="fas fa-wallet"></i> My Coupon Balance</div>
+                <div class="sub">Regular Coupons: <b>${emp.coupons.toFixed(2)}</b> (${(emp.coupons * COUPON_VAL).toFixed(2)} Br)</div>
+                <div class="sub">Night Coupons: <b>${(emp.nightCoupons || 0).toFixed(2)}</b> (${((emp.nightCoupons || 0) * NIGHT_COUPON_VAL).toFixed(2)} Br)</div>
+                <div class="sub" style="font-size:1rem; color:var(--primary); font-weight:700;">Total Coupon Worth: ${totalWorth.toFixed(2)} Birr</div>
+                <div class="sub"><i class="fas fa-clock"></i> Active Pending Orders Ahead: <b>${ordersAhead}</b></div>
+
+                <div style="border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 5px;">
+                    <button id="requestNightBonusBtn" class="night small" style="width:100%; justify-content:center;">
+                        <i class="fas fa-moon"></i> Request Night Bonus Coupon
+                    </button>
+                    ${emp.nightRequested ? `<div class="sub" style="color:var(--warn); margin-top:4px;">⏳ Night Coupon requested. Awaiting HR approval...</div>` : ''}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="title"><i class="fas fa-wallet"></i> Digital Wallet</div>
+                <div class="sub">Deposit cash to your wallet to use when you are out of coupons.</div>
+                <div class="sub" style="font-size:1rem; color:var(--success); font-weight:700;">Wallet Balance: ${((emp.walletCents || 0) / BIRR_CENTS).toFixed(2)} Birr</div>
+                ${(emp.couponSweepPendingCents || 0) > 0 ? `<div class="sub" style="color:var(--warn); font-weight:700;">⏳ ${(emp.couponSweepPendingCents / BIRR_CENTS).toFixed(2)} Br from your previous coupon balance is waiting for the admin to deposit into your wallet.</div>` : ''}
+                <div class="sub" style="font-size:0.85rem; color:var(--muted);">If coupons run out, only the remainder is charged to wallet or cash.</div>
+                
+                ${(emp.walletDepositRequested || 0) > 0 ? `
+                <div class="sub" style="color:var(--warn); margin-top:4px;">⏳ Deposit of ${(emp.walletDepositRequested / BIRR_CENTS).toFixed(2)} Br requested. Awaiting Cafe Admin approval...</div>
+                ` : `
+                <div style="border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 5px;" class="row">
+                    <input id="depositAmount" type="number" step="1" min="1" placeholder="Amount" style="width: 100px; padding: 6px;">
+                    <button id="depositWalletBtn" class="success small"><i class="fas fa-plus"></i> Request Deposit</button>
+                </div>
+                `}
+            </div>
+
+            <div class="card">
+                <div class="title"><i class="fas fa-exchange-alt"></i> Transfer Coupons</div>
+                <div class="sub">Transfer coupon value to another employee immediately.</div>
+                ${empPickerHtml(state.employees.filter(e => e.role === 'employee' && e.id !== currentUser.id), empCouponTransferSearchQuery, 'empTransferPicker', 'empCouponTransfer', empCouponTransferToId, true)}
+                ${empCouponTransferToId ? `
+                <div class="selected-emp-banner">
+                    <span>Transfer to: <b>${esc(state.employees.find(e => e.id === empCouponTransferToId)?.name || 'Unknown')}</b></span>
+                    <button class="small danger" onclick="empCouponTransferClearEmp()">Clear</button>
+                </div>
+                ` : ''}
+                <div style="border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 10px;" class="row">
+                    <input id="empTransferAmount" type="number" step="0.01" min="0.01" placeholder="Amount (Br)" style="width: 120px; padding: 6px;">
+                    <button id="empTransferRequestBtn" class="primary small"><i class="fas fa-paper-plane"></i> Transfer Now</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function historyView() {
+    const myOrders = state.orders.filter(o => o.employeeId === currentUser.id).slice().reverse();
+    const myTransfers = (Array.isArray(state.transfers) ? state.transfers : [])
+        .filter(t => t.fromId === currentUser.id || t.toId === currentUser.id)
+        .slice().reverse();
+    return `
+        <div class="grid">
+            <div class="card wide">
+                <div class="title"><i class="fas fa-history"></i> My Order History</div>
+                <div class="sub">All your past orders — pending and served.</div>
+                <table style="margin-top: 10px;">
+                    <thead><tr><th>Time</th><th>Item</th><th>Payment</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody>
+                        ${myOrders.map(o => `
+                            <tr>
+                                <td>${new Date(o.at).toLocaleString()}</td>
+                                <td>${esc(o.itemName)}</td>
+                                <td>${esc(o.payment)}</td>
+                                <td>${o.total.toFixed(2)} Br</td>
+                                <td><span class="pill ${o.served ? 'ok' : 'warn'}">${o.served ? 'Served' : 'Pending'}</span></td>
+                            </tr>
+                        `).join('') || '<tr><td colspan="5">No orders yet.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-exchange-alt"></i> My Coupon Transfer History</div>
+                <div class="sub">Coupon value you sent to or received from other employees.</div>
+                <table style="margin-top: 10px;">
+                    <thead><tr><th>Time</th><th>Type</th><th>Direction</th><th>Counterparty</th><th>Amount</th><th>Actor</th></tr></thead>
+                    <tbody>
+                        ${myTransfers.map(t => {
+                            const isSender = t.fromId === currentUser.id;
+                            const direction = isSender ? 'Sent' : 'Received';
+                            const counterparty = isSender ? t.toName : t.fromName;
+                            const dirClass = isSender ? 'bad' : 'ok';
+                            return `
+                            <tr>
+                                <td>${new Date(t.at).toLocaleString()}</td>
+                                <td>${t.type === 'ADMIN' ? 'Bureau' : 'Employee'}</td>
+                                <td><span class="pill ${dirClass}">${direction}</span></td>
+                                <td>${esc(counterparty)}</td>
+                                <td>${(t.amount || 0).toFixed(2)} Br</td>
+                                <td>${esc(t.actor)}</td>
+                            </tr>
+                        `;
+                        }).join('') || '<tr><td colspan="6">No coupon transfers yet.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+function cafeView() {
+    const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+    // Validate cafeSelectedEmpId still exists
+    if (cafeSelectedEmpId && !emps.find(e => e.id === cafeSelectedEmpId)) cafeSelectedEmpId = null;
+    const selEmp = cafeSelectedEmpId ? emps.find(e => e.id === cafeSelectedEmpId) : null;
+
+    return `
+        <div class="grid">
+            <div class="card wide sync-box">
+                <div class="title"><i class="fas fa-key"></i> Cafe Bureau — Authorize Employee Order</div>
+                <div class="sub">Find and click on the employee below, enter their password, build the cart, then authorize.</div>
+
+                <div class="field">
+                    <label>Select Employee</label>
+                    ${empPickerHtml(emps, cafeEmpSearchQuery, 'cafeEmp', 'cafeEmp', cafeSelectedEmpId, true)}
+                </div>
+
+                ${selEmp ? `
+                <div class="selected-emp-banner">
+                    <i class="fas fa-user-check" style="color:var(--primary)"></i>
+                    <span>Selected: <b>${esc(selEmp.name)}</b> &nbsp;<span class="pill ${selEmp.status === 'At Work' ? 'ok' : 'bad'}">${selEmp.status}</span> &nbsp;Coupons: <b>${getTotalWorth(selEmp).toFixed(2)} Br</b> &nbsp;Wallet: <b>${((selEmp.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br</b></span>
+                    <button class="small danger" style="margin-left:auto;" onclick="cafeClearEmp()"><i class="fas fa-times"></i> Deselect</button>
+                </div>` : ''}
+
+                <div class="field" style="margin-top:6px;">
+                    <label>Employee Password</label>
+                    <div class="pw-wrap">
+                        <input id="authEmpPw" type="password" placeholder="Enter employee's password" ${selEmp ? '' : 'disabled'}>
+                        <button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    ${menuSelectHtml(state.menu, 'authDishSelect', menuSearchQuery)}
+                    <div class="field" style="max-width:90px;">
+                        <label>Qty</label>
+                        <input id="authDishQty" type="number" min="1" value="1">
+                    </div>
+                    <button id="authAddToCartBtn" class="btn" style="margin-top: 18px;"><i class="fas fa-cart-plus"></i> Add</button>
+                </div>
+                <div class="list" style="margin-top: 10px;">
+                    ${cartHtml('auth')}
+                </div>
+                <div class="sub" style="font-weight:700; margin-top:6px;">Cart Total: ${cartTotal(authCart).toFixed(2)} Br</div>
+                <div class="sub" style="font-size:0.85rem; color:var(--muted);">Coupons are used first when available; pay any remainder with wallet or cash.</div>
+                <div class="row" style="margin-top: 10px;">
+                    <button id="authCouponOrderBtn" class="success" ${selEmp ? '' : 'disabled'}><i class="fas fa-ticket-alt"></i> Coupons</button>
+                    <button id="authWalletOrderBtn" class="primary" ${selEmp ? '' : 'disabled'}><i class="fas fa-wallet"></i> Wallet</button>
+                    <button id="authCashOrderBtn" class="warn" ${selEmp ? '' : 'disabled'}><i class="fas fa-money-bill"></i> Cash</button>
+                </div>
+                <div id="authStatusMsg"></div>
+            </div>
+
+            <div class="card">
+                <div class="title"><i class="fas fa-store"></i> Employee Menu Management</div>
+                <div class="sub">Drag order with ↑↓ buttons. This menu is for employee orders.</div>
+                <div class="row">
+                    <div class="field"><label>Dish Name</label><input id="dishName" placeholder="Name"></div>
+                    <div class="field"><label>Price (Br)</label><input id="dishPrice" type="number" min="0" step="0.01" placeholder="Price"></div>
+                    <button id="addDishBtn" class="primary" style="margin-top: 18px;"><i class="fas fa-plus"></i> Add</button>
+                    <button id="cancelEditDishBtn" class="btn hidden" style="margin-top: 18px;"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+                <div class="list" style="margin-top: 10px;">
+                    ${getSortedMenu(state.menu).map((m, idx, arr) => `
+                        <div class="item">
+                            <span>
+                                <b>${esc(m.name)}</b>
+                                <span class="pill">${m.price} Br</span>
+                                <span class="pill ${m.available ? 'ok' : 'bad'}">${m.available ? 'Available' : 'Unavailable'}</span>
+                            </span>
+                            <div class="row">
+                                ${idx > 0 ? `<button class="small menu-reorder-btn" onclick="moveMenuItem('menu','${m.id}',-1)"><i class="fas fa-arrow-up"></i></button>` : ''}
+                                ${idx < arr.length - 1 ? `<button class="small menu-reorder-btn" onclick="moveMenuItem('menu','${m.id}',1)"><i class="fas fa-arrow-down"></i></button>` : ''}
+                                <button class="small" onclick="toggleDishAvailability('${m.id}')">${m.available ? 'Disable' : 'Enable'}</button>
+                                <button class="small info" onclick="editDish('${m.id}')"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="small danger" onclick="deleteDish('${m.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-exchange-alt"></i> Transfer Coupon Value (Admin)</div>
+                <div class="sub">Transfer exact Birr amount between employees. Requires sender's password for consent.</div>
+                <div class="row">
+                    <div class="field">
+                        <label>Search Sender</label>
+                        <input id="cafeTransferFromSearch" placeholder="🔍 Search sender..." value="${esc(transferFromSearchQuery)}" oninput="cafeTransferFromOnSearch(this.value)">
+                    </div>
+                    <div class="field">
+                        <label>Search Receiver</label>
+                        <input id="cafeTransferToSearch" placeholder="🔍 Search receiver..." value="${esc(transferToSearchQuery)}" oninput="cafeTransferToOnSearch(this.value)">
+                    </div>
+                    <div class="field">
+                        <label>Amount (Br)</label>
+                        <input id="cafeTransferAmount" type="number" step="0.01" min="0.01" placeholder="Amount">
+                    </div>
+                    <button id="cafeTransferBtn" class="primary" style="margin-top: 18px;"><i class="fas fa-paper-plane"></i> Transfer</button>
+                </div>
+                <div class="row" style="margin-top: 12px;">
+                    <div class="field" style="flex: 1;">
+                        <label>Select Sender</label>
+                        <select id="cafeTransferFrom">
+                            <option value="">-- Select Sender --</option>
+                            ${emps.filter(e => employeeMatches(e, transferFromSearchQuery)).map(e => `<option value="${e.id}">${esc(e.name)} (${getTotalWorth(e).toFixed(2)} Br)</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="field" style="flex: 1;">
+                        <label>Select Receiver</label>
+                        <select id="cafeTransferTo">
+                            <option value="">-- Select Receiver --</option>
+                            ${emps.filter(e => employeeMatches(e, transferToSearchQuery)).map(e => `<option value="${e.id}">${esc(e.name)} (${getTotalWorth(e).toFixed(2)} Br)</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="field" style="margin-top: 12px;">
+                    <label>Sender's Password (Required for Consent)</label>
+                    <div class="pw-wrap">
+                        <input id="cafeTransferPassword" type="password" placeholder="Enter sender's password">
+                        <button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+            <div class="card">
+                <div class="title"><i class="fas fa-quote-left"></i> Quote of the Day</div>
+                <div class="sub">This quote appears on every employee's dashboard.</div>
+                <div class="field" style="margin-top:8px;">
+                    <label>Today's Quote</label>
+                    <textarea id="dailyQuoteInput" rows="3" placeholder="Enter an inspiring quote for employees…" style="border:1px solid var(--line); border-radius:var(--radius); padding:10px; resize:vertical;">${esc(state.dailyQuote || '')}</textarea>
+                </div>
+                <button id="saveQuoteBtn" class="primary" style="margin-top:8px;"><i class="fas fa-save"></i> Save Quote</button>
+            </div>
+        </div>`;
+}
+
+function walkinView() {
+    ensureWalkinMenu();
+    return `
+        <div class="grid">
+            <div class="card wide sync-box">
+                <div class="title"><i class="fas fa-walking"></i> Walk-in Orders</div>
+                <div class="sub">Separate menu with walk-in prices. Payment is always cash.</div>
+                <div class="row">
+                    ${menuSelectHtml(state.walkinMenu, 'walkinDishSelect', walkinMenuSearchQuery)}
+                    <div class="field" style="max-width:90px;">
+                        <label>Qty</label>
+                        <input id="walkinDishQty" type="number" min="1" value="1">
+                    </div>
+                    <button id="walkinAddToCartBtn" class="btn" style="margin-top: 18px;"><i class="fas fa-cart-plus"></i> Add</button>
+                </div>
+                <div class="list" style="margin-top: 10px;">
+                    ${cartHtml('walkin')}
+                </div>
+                <div class="sub" style="font-weight:700; margin-top:6px;">Cart Total: ${cartTotal(walkinCart).toFixed(2)} Br</div>
+                <button id="walkinOrderBtn" class="warn" style="margin-top: 10px;"><i class="fas fa-cash-register"></i> Place Walk-in Order (Cash)</button>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-list"></i> Walk-in Menu Management</div>
+                <div class="sub">Different prices from the employee menu. Use ↑↓ to reorder.</div>
+                <div class="row">
+                    <div class="field"><label>Dish Name</label><input id="walkinDishName" placeholder="Name"></div>
+                    <div class="field"><label>Price (Br)</label><input id="walkinDishPrice" type="number" min="0" step="0.01" placeholder="Price"></div>
+                    <button id="addWalkinDishBtn" class="primary" style="margin-top: 18px;"><i class="fas fa-plus"></i> Add</button>
+                    <button id="cancelEditWalkinDishBtn" class="btn hidden" style="margin-top: 18px;"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+                <div class="list" style="margin-top: 10px;">
+                    ${getSortedMenu(state.walkinMenu).map((m, idx, arr) => `
+                        <div class="item">
+                            <span>
+                                <b>${esc(m.name)}</b>
+                                <span class="pill">${m.price} Br</span>
+                                <span class="pill ${m.available ? 'ok' : 'bad'}">${m.available ? 'Available' : 'Unavailable'}</span>
+                            </span>
+                            <div class="row">
+                                ${idx > 0 ? `<button class="small menu-reorder-btn" onclick="moveMenuItem('walkinMenu','${m.id}',-1)"><i class="fas fa-arrow-up"></i></button>` : ''}
+                                ${idx < arr.length - 1 ? `<button class="small menu-reorder-btn" onclick="moveMenuItem('walkinMenu','${m.id}',1)"><i class="fas fa-arrow-down"></i></button>` : ''}
+                                <button class="small" onclick="toggleWalkinDishAvailability('${m.id}')">${m.available ? 'Disable' : 'Enable'}</button>
+                                <button class="small info" onclick="editWalkinDish('${m.id}')"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="small danger" onclick="deleteWalkinDish('${m.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>`;
+}
+
+function walletView() {
+    const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+    const pending = emps.filter(e => (e.walletDepositRequested || 0) > 0);
+    const sweeps = emps.filter(e => (e.couponSweepPendingCents || 0) > 0);
+    return `
+        <div class="grid">
+            <div class="card wide sync-box">
+                <div class="title"><i class="fas fa-wallet"></i> Wallet Deposit Approvals</div>
+                <div class="sub">Review and approve employee wallet deposit requests. Only Cafe Admin can approve.</div>
+            </div>
+            ${sweeps.length ? `
+            <div class="card wide sync-box" style="border: 2px solid var(--warn);">
+                <div class="title" style="color: var(--warn);"><i class="fas fa-bell"></i> Leftover Coupons Ready for Wallet Deposit (${sweeps.length})</div>
+                <div class="sub">The weekly coupon reset moved these employees' remaining coupon balances here. Approve to deposit the amount into their wallets.</div>
+                <div class="row" style="margin-top: 8px;">
+                    <button class="small success" onclick="approveAllCouponSweeps()"><i class="fas fa-check-double"></i> Approve All (${sweeps.length})</button>
+                </div>
+                ${sweeps.map(e => `
+                    <div class="item">
+                        <div>
+                            <b>${esc(e.name)}</b>
+                            <span class="pill warn">${(e.couponSweepPendingCents / BIRR_CENTS).toFixed(2)} Br from coupons</span>
+                            <div class="sub">Current wallet: ${((e.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br</div>
+                        </div>
+                        <div class="row">
+                            <button class="small success" onclick="approveCouponSweep('${e.id}')"><i class="fas fa-check"></i> Deposit to Wallet</button>
+                            ${e.status === 'On Leave' ? `<button class="small warn" onclick="revertCouponSweep('${e.id}')" title="Put the leftover value back onto their coupons"><i class="fas fa-undo"></i> Revert</button>` : ''}
+                            <button class="small danger" onclick="dismissCouponSweep('${e.id}')"><i class="fas fa-times"></i> Dismiss</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            ` : ''}
+            <div class="card wide">
+                <div class="title"><i class="fas fa-clock"></i> Pending Requests (${pending.length})</div>
+                ${pending.length ? pending.map(e => `
+                    <div class="item">
+                        <div>
+                            <b>${esc(e.name)}</b>
+                            <span class="pill warn">${(e.walletDepositRequested / BIRR_CENTS).toFixed(2)} Br requested</span>
+                            <div class="sub">Current wallet: ${((e.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br</div>
+                        </div>
+                        <div class="row">
+                            <button class="small primary" onclick="approveWalletDeposit('${e.id}')"><i class="fas fa-check"></i> Approve</button>
+                            <button class="small danger" onclick="rejectWalletDeposit('${e.id}')"><i class="fas fa-times"></i> Reject</button>
+                        </div>
+                    </div>
+                `).join('') : '<div class="item sub">No pending wallet deposit requests.</div>'}
+            </div>
+            <div class="card wide">
+                <div class="title"><i class="fas fa-wallet"></i> Direct Wallet Deposit (Admin)</div>
+                <div class="sub">Directly deposit funds to employee wallet without requiring a request.</div>
+                <div class="row">
+                    <div class="field">
+                        <label>Search Employee</label>
+                        <input id="adminWalletDepositSearch" placeholder="🔍 Search employee..." value="${esc(walletDepositSearchQuery)}" oninput="adminWalletDepositOnSearch(this.value)">
+                    </div>
+                    <div class="field">
+                        <label>Amount (Br)</label>
+                        <input id="adminWalletDepositAmount" type="number" step="0.01" min="0.01" placeholder="Amount">
+                    </div>
+                    <button id="adminWalletDepositBtn" class="success" style="margin-top: 18px;"><i class="fas fa-plus"></i> Deposit</button>
+                </div>
+                <div class="field" style="margin-top: 12px;">
+                    <label>Select Employee</label>
+                    <select id="adminWalletDepositEmp">
+                        <option value="">-- Select Employee --</option>
+                        ${emps.filter(e => employeeMatches(e, walletDepositSearchQuery)).map(e => `<option value="${e.id}">${esc(e.name)} (Wallet: ${((e.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br)</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-users"></i> All Employee Wallets</div>
+                <div class="list">
+                    ${emps.map(e => {
+                        const hasSweep = (e.couponSweepPendingCents || 0) > 0;
+                        return `
+                        <div class="item">
+                            <div>
+                                <b>${esc(e.name)}</b>
+                                <span class="pill">${((e.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br</span>
+                                ${hasSweep ? `<span class="pill warn">⏳ ${(e.couponSweepPendingCents / BIRR_CENTS).toFixed(2)} Br from coupons</span>` : ''}
+                            </div>
+                            ${hasSweep ? `
+                            <div class="row">
+                                <button class="small success" onclick="approveCouponSweep('${e.id}')"><i class="fas fa-check"></i> Deposit</button>
+                                ${e.status === 'On Leave' ? `<button class="small warn" onclick="revertCouponSweep('${e.id}')" title="Put the leftover value back onto their coupons"><i class="fas fa-undo"></i> Revert</button>` : ''}
+                                <button class="small danger" onclick="dismissCouponSweep('${e.id}')"><i class="fas fa-times"></i> Dismiss</button>
+                            </div>` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>`;
+}
+
+function queueView() {
+    const rev = state.orders.reduce((a, o) => a + o.total, 0);
+    const open = state.orders.filter(o => !o.served).length;
+
+    const unserved = state.orders.filter(o => !o.served).reverse();
+    const served = state.orders.filter(o => o.served).reverse();
+    const displayQueue = [...unserved, ...served];
+
+    return `
+        <div class="grid">
+            <div class="card wide">
+                <div class="title"><i class="fas fa-list-ol"></i> Live Order Queue</div>
+                <div class="stats" style="margin-bottom: 12px;">
+                    <div class="stat"><span>Total Orders</span><b>${state.orders.length}</b></div>
+                    <div class="stat"><span>Pending Queue</span><b>${open}</b></div>
+                    <div class="stat"><span>Total Value</span><b>${rev.toFixed(2)} Br</b></div>
+                </div>
+                <div class="list">
+                    ${displayQueue.map(o => `
+                        <div class="item">
+                            <div>
+                                <b>${esc(o.customer)}</b> ordered <b>${esc(o.itemName)}</b>
+                                <span class="pill ${o.payment === 'Cash' ? 'warn' : 'info'}">${o.payment}</span>
+                                <span class="pill ${o.served ? 'ok' : 'bad'}">${o.served ? 'Served' : 'Waiting'}</span>
+                                <div class="sub">${o.total.toFixed(2)} Br • ${new Date(o.at).toLocaleTimeString()}</div>
+                            </div>
+                            <div class="row">
+                                <button class="small ${o.served ? 'btn' : 'success'}" onclick="toggleOrderServed('${o.id}')">
+                                    ${o.served ? 'Mark Pending' : '✓ Serve'}
+                                </button>
+                                <button class="small danger" onclick="deleteOrder('${o.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('') || '<div class="item sub">No orders in queue.</div>'}
+                </div>
+            </div>
+        </div>`;
+}
+
+function hrView() {
+    const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+
+    return `
+        <div class="grid">
+            <div class="card wide sync-box">
+                <div class="title"><i class="fas fa-id-badge"></i> HR Register &amp; Coupon Management</div>
+                <div class="sub">Only Super Admin / HR can grant coupons and approve night bonus requests. ${currentUser.role === 'superadmin' ? 'Super Admin can also delete employees.' : ''}</div>
+            </div>
+
+            <div class="card">
+                <div class="title"><i class="fas fa-user-plus"></i> Register Employee</div>
+                <div class="field"><label>Employee Name</label><input id="newEmpName" placeholder="Full Name"></div>
+                <div class="field"><label>Username</label><input id="newEmpUser" placeholder="Username"></div>
+                <div class="field"><label>Initial Password</label><div class="pw-wrap"><input id="newEmpPw" type="password" value="123"><button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button></div></div>
+                <button id="registerEmpBtn" class="primary" style="margin-top: 10px;"><i class="fas fa-check"></i> Register</button>
+            </div>
+
+            <div class="card">
+                <div class="title"><i class="fas fa-users"></i> Employee Roster</div>
+                <div class="field">
+                    <label>Search</label>
+                    <div class="emp-search-wrap">
+                        <input class="emp-search-input" id="hrEmpSearch" placeholder="🔍 Search by name or username…" value="${esc(hrEmpSearchQuery)}" oninput="hrOnSearchInput(this.value)">
+                        <button class="emp-search-clear${hrEmpSearchQuery ? ' visible' : ''}" id="hrClearBtn" onclick="hrClearSearch()" title="Clear"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 8px; margin-top: 4px;">
+                    <button class="small success" id="markAllWorkBtn"><i class="fas fa-check-double"></i> Reset All (At Work &amp; 5 Coupons)</button>
+                    <button class="small danger" id="markAllLeaveBtn"><i class="fas fa-ban"></i> All On Leave</button>
+                </div>
+                <div class="list" id="hrRosterList" style="max-height: 420px;">
+                    ${emps.length ? hrRosterItemsHtml(emps.filter(e => employeeMatches(e, hrEmpSearchQuery))) : '<div class="hr-emp-card sub">No employees registered.</div>'}
+                </div>
+            </div>
+        </div>`;
+}
+
+function syncView() {
+    return `
+        <div class="grid">
+            <div class="card wide sync-box">
+                <div class="title"><i class="fas fa-usb"></i> USB Data Package Exchange</div>
+                <div class="notice">Export/Import structured JSON packages using a USB flash drive between disconnected HR and Cafe Bureau devices. Full backup restores all balances exactly.</div>
+                <div class="row" style="margin-top: 10px;">
+                    ${currentUser.role === 'superadmin' || currentUser.role === 'hr' ? `
+                    <button id="exportHrPkgBtn" class="primary"><i class="fas fa-file-export"></i> Export HR Package (Employees)</button>
+                    <button id="importCafePkgBtn" class="success"><i class="fas fa-file-import"></i> Import Cafe Package (Coupon Orders)</button>
+                    ` : currentUser.role === 'admin' ? `
+                    <button id="exportCafePkgBtn" class="primary"><i class="fas fa-file-export"></i> Export Cafe Package (Menu & Coupon Orders)</button>
+                    <button id="importHrPkgBtn" class="success"><i class="fas fa-file-import"></i> Import HR Package (Employees)</button>
+                    ` : ''}
+                    <button id="importFullBackupBtn" class="warn"><i class="fas fa-database"></i> Import Full Database Backup</button>
+                    <input id="syncFileInput" type="file" accept=".json" class="hidden">
+                </div>
+            </div>
+        </div>`;
+}
+
+// Parse an order's itemName like "ቡና" or "ደረቅ እንጀራ x6" into { name, qty } so quantities can be aggregated.
+function parseOrderedItem(itemName) {
+    const label = (itemName || '').trim();
+    const m = /\sx(\d+)$/i.exec(label);
+    if (m) return { name: label.replace(/\sx\d+$/i, '').trim(), qty: parseInt(m[1], 10) || 1 };
+    return { name: label || 'Unknown', qty: 1 };
+}
+
+// Aggregate orders into [{ name, qty }] — total units ordered per menu item, most-ordered first.
+function aggregateItemsFromOrders(orders) {
+    const counts = {};
+    orders.forEach(o => {
+        const { name, qty } = parseOrderedItem(o.itemName);
+        counts[name] = (counts[name] || 0) + qty;
+    });
+    return Object.keys(counts)
+        .map(name => ({ name, qty: counts[name] }))
+        .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name));
+}
+
+function reportsView() {
+    const totalRev = state.orders.reduce((a, o) => a + o.total, 0);
+    const cashRev = state.orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+    const couponRev = state.orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+    const walletRev = state.orders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+
+    const isAdmin = currentUser.role === 'admin';
+    const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
+
+    // Super Admin is restricted to coupon-usage reports: only coupon transactions
+    // appear in the detailed daily order history (no cash / wallet data).
+    const historyOrders = isSuper ? state.orders.filter(o => o.payment.includes('Coupon')) : state.orders;
+
+    // Group orders by date for detailed daily breakdown
+    const ordersByDate = {};
+    historyOrders.forEach(o => {
+        const date = new Date(o.at).toLocaleDateString();
+        if (!ordersByDate[date]) ordersByDate[date] = [];
+        ordersByDate[date].push(o);
+    });
+
+    const sortedDates = Object.keys(ordersByDate).sort((a, b) => new Date(b) - new Date(a));
+
+    return `
+        <div class="grid">
+            <div class="card wide">
+                <div class="title"><i class="fas fa-chart-line"></i> Financial Breakdown (Current Week)</div>
+                <div class="stats">
+                    ${isAdmin ? `
+                    <div class="stat"><span>Total Revenue</span><b>${totalRev.toFixed(2)} Br</b></div>
+                    <div class="stat"><span>Cash Payments</span><b>${cashRev.toFixed(2)} Br</b></div>
+                    <div class="stat"><span>Wallet Payments</span><b>${walletRev.toFixed(2)} Br</b></div>
+                    ` : ''}
+                    <div class="stat"><span>Coupon Payments</span><b>${couponRev.toFixed(2)} Br</b></div>
+                    <div class="stat"><span>Total Orders</span><b>${state.orders.length}</b></div>
+                </div>
+                ${isSuper ? `
+                <div class="sub" style="margin-top: 10px; color: var(--warn);">
+                    <i class="fas fa-info-circle"></i> Super Admin access is limited to coupon-usage reports only. Full financial reports are available to the Cafe Admin.
+                </div>
+                ` : ''}
+                <div class="row" style="margin-top: 10px;">
+                    <button class="small warn" onclick="archiveCurrentWeek()"><i class="fas fa-archive"></i> Archive Current Week & Start Fresh</button>
+                    <button class="small primary" onclick="exportCurrentWeekReport()"><i class="fas fa-download"></i> Export Current Week (DOCX/JSON)</button>
+                </div>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-calendar-week"></i> Historical Reports</div>
+                <div class="sub">View archived weekly reports from previous weeks.</div>
+                <div class="field" style="margin-top: 10px;">
+                    <label>Select Week</label>
+                    <select id="archiveWeekSelect" onchange="loadArchivedWeek(this.value)">
+                        <option value="">-- Current Week --</option>
+                        ${state.weeklyArchives.map((archive, idx) => `
+                            <option value="${idx}">${archive.weekLabel} (${archive.orderCount} orders)</option>
+                        `).join('')}
+                    </select>
+                </div>
+                ${state.weeklyArchives.length > 0 ? `
+                <button class="small outline" style="margin-top: 10px;" onclick="exportArchiveReport()"><i class="fas fa-download"></i> Export Selected Archive</button>
+                ` : ''}
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-download"></i> Quick Export Reports</div>
+                <div class="sub">Export reports in your preferred format</div>
+                <div class="row" style="margin-top: 10px; flex-wrap: wrap; gap: 8px;">
+                    <button class="small primary" onclick="exportDailyReport()"><i class="fas fa-calendar-day"></i> Export Daily (DOCX/JSON)</button>
+                    <button class="small primary" onclick="exportDailyItemsReport()"><i class="fas fa-utensils"></i> Export Daily Items (DOCX)</button>
+                    <button class="small primary" onclick="exportWeeklyReport()"><i class="fas fa-calendar-week"></i> Export Weekly (DOCX/JSON)</button>
+                    <button class="small primary" onclick="exportCurrentWeekReport()"><i class="fas fa-calendar-week"></i> Export Current Week (DOCX/JSON)</button>
+                    <button class="small outline" onclick="exportCouponReport()"><i class="fas fa-ticket-alt"></i> Export Coupon Report (DOCX/JSON)</button>
+                    <button class="small warn" onclick="refreshReportsDashboard()"><i class="fas fa-sync-alt"></i> Refresh Dashboard</button>
+                </div>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-utensils"></i> Daily Items Summary</div>
+                <div class="sub">${isSuper ? 'Coupon-ordered menu items per day.' : 'How many of each menu item was ordered each day.'}</div>
+                <div class="row" style="margin-top: 10px;">
+                    <button class="small primary" onclick="exportDailyItemsReport()"><i class="fas fa-file-word"></i> Export Daily Items (DOCX)</button>
+                </div>
+                ${sortedDates.length === 0 ? '<div class="item sub">No orders yet.</div>' : sortedDates.map(date => {
+                    const dayOrders = ordersByDate[date];
+                    const dayTotal = dayOrders.reduce((a, o) => a + o.total, 0);
+                    const dayCash = dayOrders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+                    const dayCoupon = dayOrders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+                    const dayWallet = dayOrders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+
+                    const dayStatsHtml = isAdmin ? `
+                                <div class="stat"><span>Total</span><b>${dayTotal.toFixed(2)} Br</b></div>
+                                <div class="stat"><span>Cash</span><b>${dayCash.toFixed(2)} Br</b></div>
+                                <div class="stat"><span>Coupon</span><b>${dayCoupon.toFixed(2)} Br</b></div>
+                                <div class="stat"><span>Wallet</span><b>${dayWallet.toFixed(2)} Br</b></div>` : `
+                                <div class="stat"><span>Coupon Total</span><b>${dayCoupon.toFixed(2)} Br</b></div>
+                                <div class="stat"><span>Coupon Orders</span><b>${dayOrders.length}</b></div>`;
+
+                    const dayItems = aggregateItemsFromOrders(dayOrders);
+                    const totalUnits = dayItems.reduce((a, it) => a + it.qty, 0);
+
+                    return `
+                    <div style="margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius); padding: 15px; background: #f8fbff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="margin: 0; color: var(--primary);">${date}</h3>
+                            <div class="stats" style="gap: 10px;">
+                                ${dayStatsHtml}
+                            </div>
+                        </div>
+                        <table style="margin-top: 10px;">
+                            <thead><tr><th style="width:40px;">#</th><th>Menu Item</th><th style="width:140px;">Quantity Ordered</th></tr></thead>
+                            <tbody>
+                                ${dayItems.map((it, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td>${esc(it.name)}</td>
+                                        <td><b>${it.qty}</b></td>
+                                    </tr>
+                                `).join('') || '<tr><td colspan="3">No items.</td></tr>'}
+                                <tr>
+                                    <td colspan="2" style="text-align:right;"><b>Total items sold</b></td>
+                                    <td><b>${totalUnits}</b></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+}
+
+function profileView() {
+    return `
+        <div class="grid">
+            <div class="card">
+                <div class="title"><i class="fas fa-user-cog"></i> Account Settings</div>
+                <div class="field"><label>Username</label><input id="profileUser" value="${esc(currentUser.username)}"></div>
+                <div class="field"><label>New Password</label><div class="pw-wrap"><input id="profilePw" type="password" placeholder="Leave blank to keep current"><button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button></div></div>
+                <button id="saveProfileBtn" class="primary" style="margin-top: 10px;"><i class="fas fa-save"></i> Save Changes</button>
+                <div id="profileMsg"></div>
+            </div>
+        </div>`;
+}
+
+// Global Window Helpers
+window.copyToClipboard = function(text, label) {
+    const done = (ok) => {
+        if (ok) alert(`✅ ${label} copied to clipboard: ${text}`);
+        else prompt(`Copy ${label} manually:`, text);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => done(true)).catch(() => fallbackCopy(text, done));
+    } else {
+        fallbackCopy(text, done);
+    }
+};
+
+window.togglePwVisibility = function(btn) {
+    const wrap = btn.closest('.pw-wrap');
+    const input = wrap ? wrap.querySelector('input') : null;
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    const icon = btn.querySelector('i');
+    if (icon) icon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    btn.title = show ? 'Hide password' : 'Show password';
+    input.focus();
+};
+
+function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+        done(document.execCommand('copy'));
+    } catch (e) {
+        done(false);
+    }
+    document.body.removeChild(ta);
+}
+
+window.moveMenuItem = async function(menuType, id, direction) {
+    const arr = menuType === 'walkinMenu' ? state.walkinMenu : state.menu;
+    const sorted = getSortedMenu(arr);
+    const idx = sorted.findIndex(m => m.id === id);
+    if (idx < 0) return;
+    const swapIdx = idx + direction;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    const a = sorted[idx], b = sorted[swapIdx];
+    const aOrder = a.sortOrder ?? idx;
+    const bOrder = b.sortOrder ?? swapIdx;
+    a.sortOrder = bOrder;
+    b.sortOrder = aOrder;
+    await save('MENU_REORDERED');
+    render(menuType === 'walkinMenu' ? 'walkin' : 'cafe');
+};
+
+window.toggleWalkinDishAvailability = async function(id) {
+    const dish = state.walkinMenu.find(m => m.id === id);
+    if (dish) {
+        dish.available = !dish.available;
+        await save('WALKIN_DISH_AVAILABILITY_TOGGLED');
+        render('walkin');
+    }
+};
+
+window.editWalkinDish = function(id) {
+    const dish = state.walkinMenu.find(m => m.id === id);
+    if (!dish) return;
+    editWalkinDishId = id;
+    $('walkinDishName').value = dish.name;
+    $('walkinDishPrice').value = dish.price;
+    $('addWalkinDishBtn').innerHTML = '<i class="fas fa-save"></i> Save';
+    $('cancelEditWalkinDishBtn').classList.remove('hidden');
+    $('walkinDishName').focus();
+};
+
+window.deleteWalkinDish = async function(id) {
+    if (!confirm('Delete this walk-in menu item?')) return;
+    state.walkinMenu = state.walkinMenu.filter(m => m.id !== id);
+    await save('WALKIN_DISH_DELETED');
+    render('walkin');
+};
+
+window.toggleDishAvailability = async function(id) {
+    const dish = state.menu.find(m => m.id === id);
+    if (dish) {
+        dish.available = !dish.available;
+        await save('DISH_AVAILABILITY_TOGGLED');
+        render('cafe');
+    }
+};
+
+window.editDish = function(id) {
+    const dish = state.menu.find(m => m.id === id);
+    if (!dish) return;
+    editDishId = id;
+    $('dishName').value = dish.name;
+    $('dishPrice').value = dish.price;
+    $('addDishBtn').innerHTML = '<i class="fas fa-save"></i> Save';
+    $('cancelEditDishBtn').classList.remove('hidden');
+    $('dishName').focus();
+};
+
+window.deleteDish = async function(id) {
+    if (!confirm('Are you sure you want to permanently delete this menu item?')) return;
+    state.menu = state.menu.filter(m => m.id !== id);
+    await save('DISH_DELETED');
+    render('cafe');
+};
+
+window.toggleOrderServed = async function(id) {
+    const ord = state.orders.find(o => o.id === id);
+    if (ord) {
+        ord.served = !ord.served;
+        await save('ORDER_SERVED_TOGGLED');
+        render('queue');
+    }
+};
+
+window.deleteOrder = async function(id) {
+    if (!confirm('Delete order from queue and refund employee?')) return;
+    const order = state.orders.find(o => o.id === id);
+    if (!order) return;
+
+    const emp = state.employees.find(e => e.id === order.employeeId);
+    if (emp) refundOrderPayment(emp, order);
+
+    state.orders = state.orders.filter(o => o.id !== id);
+    await save('ORDER_DELETED_WITH_REFUND');
+    render('queue');
+};
+
+window.toggleWorkStatus = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp) {
+        emp.status = emp.status === 'At Work' ? 'On Leave' : 'At Work';
+        await save('EMPLOYEE_STATUS_CHANGED');
+        render('hr');
+    }
+};
+
+window.deleteEmployee = async function(id) {
+    if (currentUser.role !== 'superadmin') return alert('Only Super Admin can delete employees.');
+    
+    const emp = state.employees.find(e => e.id === id);
+    if (!emp) return alert('Employee not found.');
+    
+    // Check if employee has any orders
+    const empOrders = state.orders.filter(o => o.employeeId === id);
+    if (empOrders.length > 0) {
+        return alert(`Cannot delete ${emp.name}. They have ${empOrders.length} order(s) in the system. Please handle their orders first.`);
+    }
+    
+    // Check if employee has any remaining balance
+    const totalWorth = getTotalWorth(emp);
+    const walletBalance = (emp.walletCents || 0) / BIRR_CENTS;
+    if (totalWorth > 0 || walletBalance > 0) {
+        const confirmMsg = `${emp.name} has:\n- ${totalWorth.toFixed(2)} Br in coupons\n- ${walletBalance.toFixed(2)} Br in wallet\n\nAre you sure you want to delete this employee? All balances will be lost.`;
+        if (!confirm(confirmMsg)) return;
+    } else {
+        if (!confirm(`Are you sure you want to delete ${emp.name}?`)) return;
+    }
+    
+    state.employees = state.employees.filter(e => e.id !== id);
+    await save('EMPLOYEE_DELETED');
+    alert(`✅ ${emp.name} has been deleted from the system.`);
+    render('hr');
+};
+
+let editingEmployeeId = null;
+
+window.openEditEmployeeModal = function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (!emp) return;
+    editingEmployeeId = id;
+    
+    let modal = $('hrEditEmpModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'hrEditEmpModal';
+        modal.className = 'modal-overlay';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-box">
+            <div class="title"><i class="fas fa-user-edit"></i> Edit Employee</div>
+            <div class="field" style="margin-top:10px;"><label>Name</label><input id="editEmpName" value="${esc(emp.name)}"></div>
+            <div class="field" style="margin-top:10px;"><label>Username</label><input id="editEmpUser" value="${esc(emp.username)}"></div>
+            <div class="field" style="margin-top:10px;"><label>New Password</label><div class="pw-wrap"><input id="editEmpPw" type="password" placeholder="Leave blank to keep current password"><button type="button" class="pw-eye" tabindex="-1" onclick="togglePwVisibility(this)" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button></div></div>
+            <div class="row" style="margin-top:20px;">
+                <button class="primary" onclick="saveEditedEmployee()"><i class="fas fa-save"></i> Save Changes</button>
+                <button class="btn" onclick="closeEditEmployeeModal()">Cancel</button>
+            </div>
+        </div>
+    `;
+    modal.classList.remove('hidden');
+};
+
+window.closeEditEmployeeModal = function() {
+    const modal = $('hrEditEmpModal');
+    if (modal) modal.classList.add('hidden');
+    editingEmployeeId = null;
+};
+
+window.saveEditedEmployee = async function() {
+    if (!editingEmployeeId) return;
+    const emp = state.employees.find(e => e.id === editingEmployeeId);
+    if (!emp) return closeEditEmployeeModal();
+
+    const name = $('editEmpName').value.trim();
+    const user = $('editEmpUser').value.trim();
+    const pass = $('editEmpPw').value.trim();
+
+    if (!name || !user) return alert('Name and username cannot be empty.');
+    
+    if (state.employees.some(e => e.username === user && e.id !== editingEmployeeId)) {
+        return alert('Username already taken by another employee.');
+    }
+
+    emp.name = name;
+    emp.username = user;
+    if (pass) {
+        emp.pw = await makePw(pass);
+    }
+
+    await save('EMPLOYEE_PROFILE_EDITED');
+    alert('Employee profile updated successfully!');
+    closeEditEmployeeModal();
+    render('hr');
+};
+
+function getMondayOfWeek(d = new Date()) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + diff);
+    return date;
+}
+
+function getWeekRange(d = new Date()) {
+    const start = getMondayOfWeek(d);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    return { start, end };
+}
+
+function getTodayRange() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+}
+
+function ordersInRange(orders, start, end) {
+    return orders.filter(o => {
+        const t = new Date(o.at);
+        return t >= start && t < end;
+    });
+}
+
+function buildFinancialReport(periodLabel, rangeStart, rangeEnd, orders) {
+    const totalRev = orders.reduce((a, o) => a + o.total, 0);
+    const cashRev = orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+    const couponRev = orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+    const walletRev = orders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || o.total), 0);
+    return {
+        title: periodLabel,
+        periodStart: rangeStart.toISOString(),
+        periodEnd: rangeEnd.toISOString(),
+        generatedAt: now(),
+        totalRevenue: totalRev,
+        cashRevenue: cashRev,
+        couponRevenue: couponRev,
+        walletRevenue: walletRev,
+        orderCount: orders.length,
+        orders
+    };
+}
+
+function adminReportButtonsHtml(compact) {
+    const week = getWeekRange();
+    const weekOrders = ordersInRange(state.orders, week.start, week.end);
+    const today = getTodayRange();
+    const todayOrders = ordersInRange(state.orders, today.start, today.end);
+    const mondayLabel = week.start.toLocaleDateString();
+    const style = compact ? 'margin-top: 10px;' : 'margin-top: 14px;';
+    return `
+        <div class="row" style="${style} flex-wrap: wrap; gap: 8px;">
+            <button class="small outline" onclick="exportDailyReport()"><i class="fas fa-calendar-day"></i> Export Daily (${todayOrders.length})</button>
+            <button class="small outline" onclick="exportWeeklyReport()"><i class="fas fa-calendar-week"></i> Export Weekly (${weekOrders.length})</button>
+            <button class="small warn" onclick="refreshWeeklyReport()"><i class="fas fa-broom"></i> Refresh Weekly (since ${mondayLabel})</button>
+        </div>
+        <div class="sub" style="margin-top:6px;">Weekly reports reset every Monday. Use <b>Refresh Weekly</b> to export and clear this week's orders for a clean slate.</div>`;
+}
+
+function superadminCouponReportButtonsHtml() {
+    const week = getWeekRange();
+    const weekOrders = ordersInRange(state.orders.filter(o => o.payment.includes('Coupon')), week.start, week.end);
+    return `
+        <div class="row" style="margin-top: 10px; flex-wrap: wrap; gap: 8px;">
+            <button class="small outline" onclick="exportCouponReport()"><i class="fas fa-download"></i> Export Weekly Coupon Report (${weekOrders.length})</button>
+        </div>`;
+}
+
+window.exportDailyReport = function() {
+    if (currentUser.role !== 'admin') return alert('Only Cafe Admin can export financial reports.');
+    const range = getTodayRange();
+    const orders = ordersInRange(state.orders, range.start, range.end);
+    
+    // Ask user for export format
+    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+    
+    if (format) {
+        const report = buildFinancialReport('Daily Report', range.start, range.end, orders);
+        const docxContent = generateFinancialDocxReport(report, 'Daily Report');
+        downloadFile(`habesha_daily_report_${now().slice(0, 10)}.docx`, docxContent);
+        alert('✅ Exported daily report as DOCX');
+    } else {
+        const report = buildFinancialReport('Daily Report', range.start, range.end, orders);
+        downloadFile(`habesha_daily_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+        alert('✅ Exported daily report as JSON');
+    }
+};
+
+window.exportDailyItemsReport = function() {
+    const isAdmin = currentUser.role === 'admin';
+    const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
+    if (!isAdmin && !isSuper) return alert('Only Cafe Admin / Super Admin can export this report.');
+    // Super Admin sees coupon orders only — the export matches what is shown on screen.
+    const orders = isSuper ? state.orders.filter(o => o.payment.includes('Coupon')) : state.orders;
+    if (!orders.length) return alert('No orders to export.');
+    const docxContent = generateDailyItemsDocxReport(orders);
+    downloadFile(`habesha_daily_items_${now().slice(0, 10)}.docx`, docxContent);
+    alert(isSuper ? '✅ Exported daily items report (coupon orders) as DOCX' : '✅ Exported daily items report as DOCX');
+};
+
+window.exportWeeklyReport = function() {
+    if (currentUser.role !== 'admin') return alert('Only Cafe Admin can export financial reports.');
+    const range = getWeekRange();
+    const orders = ordersInRange(state.orders, range.start, range.end);
+    
+    // Ask user for export format
+    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+    
+    if (format) {
+        const report = buildFinancialReport('Weekly Report', range.start, range.end, orders);
+        const docxContent = generateFinancialDocxReport(report, 'Weekly Report');
+        downloadFile(`habesha_weekly_report_${now().slice(0, 10)}.docx`, docxContent);
+        alert('✅ Exported weekly report as DOCX');
+    } else {
+        const report = buildFinancialReport('Weekly Report', range.start, range.end, orders);
+        downloadFile(`habesha_weekly_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+        alert('✅ Exported weekly report as JSON');
+    }
+};
+
+window.refreshWeeklyReport = async function() {
+    if (currentUser.role !== 'admin') return alert('Only Cafe Admin can refresh weekly reports.');
+    
+    const range = getWeekRange();
+    const weekOrders = ordersInRange(state.orders, range.start, range.end);
+    
+    if (!weekOrders.length) {
+        // Check if there are any orders at all
+        if (state.orders.length === 0) {
+            return alert('No orders in the system to refresh.');
+        } else {
+            return alert('No orders found in the current week range (' + range.start.toLocaleDateString() + ' - ' + range.end.toLocaleDateString() + '). All orders are from previous weeks.');
+        }
+    }
+    
+    const totalRevenue = weekOrders.reduce((a, o) => a + o.total, 0);
+    const confirmMessage = `Export ${weekOrders.length} order(s) from this week (${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}) with total revenue of ${totalRevenue.toFixed(2)} Br and clear them from the live system?`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    try {
+        // Ask for export format
+        const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+        
+        if (format) {
+            const report = buildFinancialReport('Weekly Report (Archived)', range.start, range.end, weekOrders);
+            const docxContent = generateFinancialDocxReport(report, 'Weekly Report (Archived)');
+            downloadFile(`habesha_weekly_archive_${now().slice(0, 10)}.docx`, docxContent);
+        } else {
+            const report = buildFinancialReport('Weekly Report (Archived)', range.start, range.end, weekOrders);
+            downloadFile(`habesha_weekly_archive_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+        }
+
+        const weekIds = new Set(weekOrders.map(o => o.id));
+        state.orders = state.orders.filter(o => !weekIds.has(o.id));
+        const weekTransfers = ordersInRange(Array.isArray(state.transfers) ? state.transfers : [], range.start, range.end);
+        const weekTransferIds = new Set(weekTransfers.map(t => t.id));
+        state.transfers = (Array.isArray(state.transfers) ? state.transfers : []).filter(t => !weekTransferIds.has(t.id));
+        state.lastWeeklyRefresh = now();
+        
+        await save('WEEKLY_REPORT_REFRESHED');
+        
+        const successMessage = `✅ Exported and cleared ${weekOrders.length} order(s) with total revenue of ${totalRevenue.toFixed(2)} Br. Fresh week started.`;
+        alert(successMessage);
+        
+        // Refresh the current view
+        render(currentTab);
+    } catch (error) {
+        console.error('Error refreshing weekly report:', error);
+        alert('❌ Error refreshing weekly report: ' + error.message);
+    }
+};
+
+window.loadArchivedWeek = function(archiveIndex) {
+    if (archiveIndex === "") {
+        render('reports');
+        return;
+    }
+    
+    const archive = state.weeklyArchives[parseInt(archiveIndex)];
+    if (!archive) return alert('Archive not found.');
+    
+    const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
+    // Super Admin / HR are restricted to coupon-usage reports: only coupon transactions
+    // from the archived week are shown (no cash / wallet / total revenue data).
+    const archivedOrders = isSuper ? archive.orders.filter(o => o.payment.includes('Coupon')) : archive.orders;
+    const totalRev = archivedOrders.reduce((a, o) => a + o.total, 0);
+    const cashRev = archivedOrders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
+    const couponRev = archivedOrders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
+    const walletRev = archivedOrders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+
+    const archiveStatsHtml = isSuper ? `
+                <div class="stat"><span>Coupon Payments</span><b>${couponRev.toFixed(2)} Br</b></div>
+                <div class="stat"><span>Coupon Orders</span><b>${archivedOrders.length}</b></div>` : `
+                <div class="stat"><span>Total Revenue</span><b>${totalRev.toFixed(2)} Br</b></div>
+                <div class="stat"><span>Cash Payments</span><b>${cashRev.toFixed(2)} Br</b></div>
+                <div class="stat"><span>Wallet Payments</span><b>${walletRev.toFixed(2)} Br</b></div>
+                <div class="stat"><span>Coupon Payments</span><b>${couponRev.toFixed(2)} Br</b></div>
+                <div class="stat"><span>Total Orders</span><b>${archivedOrders.length}</b></div>`;
+
+    const ordersByDate = {};
+    archivedOrders.forEach(o => {
+        const date = new Date(o.at).toLocaleDateString();
+        if (!ordersByDate[date]) ordersByDate[date] = [];
+        ordersByDate[date].push(o);
+    });
+
+    const sortedDates = Object.keys(ordersByDate).sort((a, b) => new Date(b) - new Date(a));
+
+    const archiveHtml = `
+        <div class="card wide" style="margin-bottom: 20px;">
+            <div class="title"><i class="fas fa-archive"></i> Archived Report: ${archive.weekLabel}</div>
+            <div class="stats">
+                ${archiveStatsHtml}
+            </div>
+            <button class="small outline" style="margin-top: 10px;" onclick="render('reports')"><i class="fas fa-arrow-left"></i> Back to Current Week</button>
+        </div>
+        <div class="card wide">
+            <div class="title"><i class="fas fa-list-alt"></i> Archived Order History</div>
+            ${sortedDates.length === 0 ? '<div class="item sub">No orders in this archive.</div>' : sortedDates.map(date => {
+                const dayOrders = ordersByDate[date];
+                const dayTotal = dayOrders.reduce((a, o) => a + o.total, 0);
+                
+                return `
+                <div style="margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius); padding: 15px; background: #f8fbff;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0; color: var(--primary);">${date}</h3>
+                        <div class="stat"><span>Daily Total</span><b>${dayTotal.toFixed(2)} Br</b></div>
+                    </div>
+                    <table style="margin-top: 10px;">
+                        <thead><tr><th>Time</th><th>Customer</th><th>Item</th><th>Payment</th><th>Amount</th></tr></thead>
+                        <tbody>
+                            ${dayOrders.map(o => `
+                                <tr>
+                                    <td>${new Date(o.at).toLocaleTimeString()}</td>
+                                    <td>${esc(o.customer)}</td>
+                                    <td>${esc(o.itemName)}</td>
+                                    <td>${esc(o.payment)}</td>
+                                    <td>${o.total.toFixed(2)} Br</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            }).join('')}
+        </div>
+    `;
+
+    $('content').innerHTML = archiveHtml;
+};
+
+window.exportArchiveReport = function() {
+    if (currentUser.role !== 'admin') return alert('Only Cafe Admin can export financial reports.');
+    const select = $('archiveWeekSelect');
+    if (!select || select.value === "") return alert('Please select an archived week first.');
+    
+    const archive = state.weeklyArchives[parseInt(select.value)];
+    if (!archive) return alert('Archive not found.');
+    
+    // Ask user for export format
+    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+    
+    if (format) {
+        // Export as DOCX
+        const docxContent = generateDocxReport(archive);
+        downloadFile(`habesha_archive_${archive.weekLabel.replace(/\s+/g, '_')}.docx`, docxContent);
+        alert(`✅ Exported archive as DOCX: ${archive.weekLabel}`);
+    } else {
+        // Export as JSON
+        const report = {
+            type: 'ARCHIVED_WEEKLY_REPORT',
+            weekLabel: archive.weekLabel,
+            exportDate: now(),
+            orders: archive.orders,
+            summary: archive.summary
+        };
+        downloadFile(`habesha_archive_${archive.weekLabel.replace(/\s+/g, '_')}.json`, JSON.stringify(report, null, 2));
+        alert(`✅ Exported archive as JSON: ${archive.weekLabel}`);
+    }
+};
+
+window.exportCouponReport = function() {
+    const range = getWeekRange();
+    const couponOrders = ordersInRange(state.orders.filter(o => o.payment.includes('Coupon')), range.start, range.end);
+    
+    // Ask user for export format
+    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+    
+    if (format) {
+        // Generate DOCX for coupon report
+        const couponRevenue = couponOrders.reduce((a, o) => a + (o.couponPart || o.total), 0);
+        
+        let html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Weekly Coupon Usage Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #8B4513; border-bottom: 2px solid #8B4513; padding-bottom: 10px; }
+        h2 { color: #657184; margin-top: 30px; }
+        h3 { color: #657184; margin-top: 20px; }
+        .summary { background: #f5f7fb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .summary-item { margin: 10px 0; font-size: 16px; }
+        .summary-item strong { color: #8B4513; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+        td { border: 1px solid #dce2ea; padding: 10px; }
+        tr:nth-child(even) { background: #f8fbff; }
+        .date-section { margin: 30px 0; page-break-after: always; }
+        .date-section:last-child { page-break-after: auto; }
+        .date-header { background: #657184; color: white; padding: 10px; font-weight: bold; }
+        .daily-total { text-align: right; font-weight: bold; color: #8B4513; margin-top: 10px; }
+        .time-period { background: #e3f2fd; padding: 10px; margin: 10px 0; border-left: 4px solid #0d47a1; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+    <h1>☕ Habesha Cafe Coupon Usage Report</h1>
+    
+    <div class="summary">
+        <h3>Report Summary</h3>
+        <div class="summary-item"><strong>Period:</strong> ${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}</div>
+        <div class="summary-item"><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+        <div class="summary-item"><strong>Total Coupon Revenue:</strong> ${couponRevenue.toFixed(2)} Br</div>
+        <div class="summary-item"><strong>Total Coupon Orders:</strong> ${couponOrders.length}</div>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2>Coupon Order Details</h2>
+`;
+        
+        // Group coupon orders by date
+        const couponOrdersByDate = {};
+        couponOrders.forEach(o => {
+            const date = new Date(o.at).toLocaleDateString();
+            if (!couponOrdersByDate[date]) couponOrdersByDate[date] = [];
+            couponOrdersByDate[date].push(o);
+        });
+
+        const sortedCouponDates = Object.keys(couponOrdersByDate).sort((a, b) => new Date(b) - new Date(a));
+
+        sortedCouponDates.forEach(date => {
+            const dayOrders = couponOrdersByDate[date];
+            const dayTotal = dayOrders.reduce((a, o) => a + (o.couponPart || o.total), 0);
+            
+            html += `
+    <div class="date-section">
+        <div class="date-header">${date}</div>
+        <div class="time-period">
+            <strong>Daily Coupon Revenue:</strong> ${dayTotal.toFixed(2)} Br | Orders: ${dayOrders.length}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Amount</th>
+                    <th>Coupon Used</th>
+                </tr>
+            </thead>
+            <tbody>
+`;
+            
+            dayOrders.forEach(o => {
+                html += `
+                <tr>
+                    <td>${new Date(o.at).toLocaleTimeString()}</td>
+                    <td>${o.customer}</td>
+                    <td>${o.itemName}</td>
+                    <td>${o.total.toFixed(2)} Br</td>
+                    <td>${(o.couponPart || o.total).toFixed(2)} Br</td>
+                </tr>`;
+            });
+            
+            html += `
+            </tbody>
+        </table>
+    </div>`;
+        });
+        
+        html += `
+    <div style="margin-top: 50px; text-align: center; color: #657184; font-size: 12px;">
+        Generated by Habesha Cafe Management System
+    </div>
+</body>
+</html>`;
+        
+        downloadFile(`habesha_coupon_report_${now().slice(0, 10)}.docx`, html);
+        alert('✅ Exported coupon report as DOCX');
+    } else {
+        const report = {
+            title: "Weekly Coupon Usage Report",
+            periodStart: range.start.toISOString(),
+            periodEnd: range.end.toISOString(),
+            generatedAt: now(),
+            couponRevenue: couponOrders.reduce((a, o) => a + (o.couponPart || o.total), 0),
+            couponOrders
+        };
+        downloadFile(`habesha_coupon_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+        alert('✅ Exported coupon report as JSON');
+    }
+};
+
+window.refreshReportsDashboard = function() {
+    if (confirm('This will refresh the reports dashboard and reload the current view. Continue?')) {
+        // Reload the current view to refresh the dashboard
+        render('reports');
+        alert('✅ Dashboard refreshed successfully');
+    }
+};
+
+window.approveNightCoupon = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp) {
+        ensureCouponLedger(emp);
+        emp.nightCents += NIGHT_COUPON_CENTS;
+        syncCouponDisplay(emp);
+        emp.nightRequested = false;
+        await save('NIGHT_COUPON_APPROVED');
+        alert(`✅ Night coupon approved for ${emp.name}! (+${NIGHT_COUPON_VAL} Br)`);
+        render('hr');
+    }
+};
+
+window.grantNightCoupon = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp) {
+        ensureCouponLedger(emp);
+        emp.nightCents += NIGHT_COUPON_CENTS;
+        syncCouponDisplay(emp);
+        await save('NIGHT_COUPON_GRANTED');
+        alert(`✅ Granted 1 Night Coupon to ${emp.name}! (+${NIGHT_COUPON_VAL} Br)`);
+        render('hr');
+    }
+};
+
+window.approveWalletDeposit = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp && (emp.walletDepositRequested || 0) > 0) {
+        const amount = emp.walletDepositRequested / BIRR_CENTS;
+        emp.walletCents = (emp.walletCents || 0) + emp.walletDepositRequested;
+        emp.walletDepositRequested = 0;
+        await save('WALLET_DEPOSIT_APPROVED');
+        alert(`✅ Wallet deposit of ${amount.toFixed(2)} Br approved for ${emp.name}!`);
+        render(currentTab === 'wallet' ? 'wallet' : 'hr');
+    }
+};
+
+window.rejectWalletDeposit = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp && (emp.walletDepositRequested || 0) > 0) {
+        const amount = emp.walletDepositRequested / BIRR_CENTS;
+        emp.walletDepositRequested = 0;
+        await save('WALLET_DEPOSIT_REJECTED');
+        alert(`❌ Wallet deposit request of ${amount.toFixed(2)} Br from ${emp.name} rejected.`);
+        render(currentTab === 'wallet' ? 'wallet' : 'hr');
+    }
+};
+
+window.grantRegularCoupon = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp) {
+        ensureCouponLedger(emp);
+        emp.regularCents += COUPON_CENTS;
+        syncCouponDisplay(emp);
+        await save('REGULAR_COUPON_GRANTED');
+        alert(`✅ Granted 1 Regular Coupon to ${emp.name}! (+${COUPON_VAL} Br)`);
+        render('hr');
+    }
+};
+
+// ===== WEEKLY COUPON SWEEP (leftover coupons -> wallet via admin approval) =====
+// Weekly reset: clears the employee's remaining coupon balance and parks its exact
+// value in couponSweepPendingCents so the Cafe Admin can deposit it into the wallet.
+window.resetWeeklyCoupons = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (!emp) return;
+    ensureCouponLedger(emp);
+    if ((emp.couponSweepPendingCents || 0) > 0) {
+        return alert(`${emp.name} already has ${(emp.couponSweepPendingCents / BIRR_CENTS).toFixed(2)} Br waiting in Wallet Approvals.`);
+    }
+    const remainingCents = emp.regularCents + emp.nightCents;
+    if (remainingCents <= 0) return alert(`${emp.name} has no remaining coupon balance to sweep.`);
+    const remainingBr = remainingCents / BIRR_CENTS;
+    if (!confirm(`Weekly coupon reset for ${emp.name}:\n\nRemaining balance of ${remainingBr.toFixed(2)} Br will be cleared from their coupons and sent to the Cafe Admin's Wallet Approvals to be deposited into their wallet.\n\nContinue?`)) return;
+    emp.couponSweepPendingCents = remainingCents;
+    emp.regularCents = 0;
+    emp.nightCents = 0;
+    syncCouponDisplay(emp);
+    await save('WEEKLY_COUPON_RESET');
+    alert(`✅ Weekly coupons reset for ${emp.name}. ${remainingBr.toFixed(2)} Br is now waiting in Wallet Approvals.`);
+    render(currentTab === 'hr' ? 'hr' : currentTab);
+};
+
+window.approveCouponSweep = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp && (emp.couponSweepPendingCents || 0) > 0) {
+        const amount = emp.couponSweepPendingCents / BIRR_CENTS;
+        emp.walletCents = (emp.walletCents || 0) + emp.couponSweepPendingCents;
+        emp.couponSweepPendingCents = 0;
+        await save('COUPON_SWEEP_DEPOSITED');
+        alert(`✅ Deposited ${amount.toFixed(2)} Br (leftover coupons) into ${emp.name}'s wallet!`);
+        render(currentTab === 'wallet' ? 'wallet' : 'hr');
+    }
+};
+
+window.dismissCouponSweep = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp && (emp.couponSweepPendingCents || 0) > 0) {
+        const amount = emp.couponSweepPendingCents / BIRR_CENTS;
+        if (!confirm(`Dismiss the leftover-coupon deposit of ${amount.toFixed(2)} Br for ${emp.name}? This value will NOT be added to their wallet.`)) return;
+        emp.couponSweepPendingCents = 0;
+        await save('COUPON_SWEEP_DISMISSED');
+        alert(`❌ Leftover coupon deposit of ${amount.toFixed(2)} Br for ${emp.name} dismissed.`);
+        render(currentTab === 'wallet' ? 'wallet' : 'hr');
+    }
+};
+
+window.approveAllCouponSweeps = async function() {
+    const sweeps = state.employees.filter(e => e.role === 'employee' && (e.couponSweepPendingCents || 0) > 0);
+    if (!sweeps.length) return alert('No leftover-coupon deposits are waiting.');
+    const totalBr = sweeps.reduce((a, e) => a + e.couponSweepPendingCents, 0) / BIRR_CENTS;
+    if (!confirm(`Deposit leftover coupons into wallets for ${sweeps.length} employee(s)?\n\nTotal: ${totalBr.toFixed(2)} Br\n\n${sweeps.map(e => `• ${e.name}: ${(e.couponSweepPendingCents / BIRR_CENTS).toFixed(2)} Br`).join('\n')}`)) return;
+    sweeps.forEach(e => {
+        e.walletCents = (e.walletCents || 0) + e.couponSweepPendingCents;
+        e.couponSweepPendingCents = 0;
+    });
+    await save('COUPON_SWEEP_ALL_DEPOSITED');
+    alert(`✅ Deposited ${totalBr.toFixed(2)} Br into ${sweeps.length} wallet(s)!`);
+    render(currentTab === 'wallet' ? 'wallet' : 'hr');
+};
+
+// Undo a pending sweep — puts the leftover value back onto the employee's coupons.
+// Intended mainly for employees On Leave who should not lose their balance while away.
+window.revertCouponSweep = async function(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp && (emp.couponSweepPendingCents || 0) > 0) {
+        const amount = emp.couponSweepPendingCents / BIRR_CENTS;
+        if (!confirm(`Revert the sweep for ${emp.name}? ${amount.toFixed(2)} Br goes back onto their coupons.`)) return;
+        emp.regularCents += emp.couponSweepPendingCents;
+        syncCouponDisplay(emp);
+        emp.couponSweepPendingCents = 0;
+        await save('COUPON_SWEEP_REVERTED');
+        alert(`↩️ Reverted ${amount.toFixed(2)} Br back to ${emp.name}'s coupons.`);
+        render(currentTab === 'wallet' ? 'wallet' : 'hr');
+    }
+};
+
+// Event Binders
+function bindTabActions(tab) {
+    if (tab === 'order') {
+        $('empAddToCartBtn').onclick = () => addCartItem('employee', 'empDishSelect', 'empDishQty');
+        $('placeCouponOrderBtn').onclick = () => placeEmployeeOrder('Coupon Balance');
+        $('placeWalletOrderBtn').onclick = () => placeEmployeeOrder('Wallet Balance');
+        $('placeCashOrderBtn').onclick = () => {
+            placeEmployeeOrder('Cash');
+            $('paymentModal').classList.remove('hidden');
+        };
+        $('requestNightBonusBtn').onclick = async () => {
+            const emp = state.employees.find(e => e.id === currentUser.id);
+            if (emp.status !== 'At Work') return alert('You must be At Work to request night bonus.');
+            emp.nightRequested = true;
+            await save('NIGHT_BONUS_REQUESTED');
+            alert('🌙 Request submitted! HR / Super Admin will approve your night coupon.');
+            render('order');
+        };
+        const btn = $('depositWalletBtn');
+        if (btn) {
+            btn.onclick = async () => {
+                const amount = parseFloat($('depositAmount').value);
+                if (isNaN(amount) || amount <= 0) return alert('Enter a valid deposit amount.');
+                const emp = state.employees.find(e => e.id === currentUser.id);
+                if (emp) {
+                    emp.walletDepositRequested = moneyToCents(amount);
+                    await save('WALLET_DEPOSIT_REQUESTED');
+                    alert(`⏳ Requested deposit of ${amount.toFixed(2)} Birr. Awaiting admin approval.`);
+                    render('order');
+                }
+            };
+        }
+
+        const transferBtn = $('empTransferRequestBtn');
+        if (transferBtn) {
+            transferBtn.onclick = async () => {
+                const toId = empCouponTransferToId;
+                const amount = parseFloat($('empTransferAmount').value);
+                if (!toId) return alert('Please select an employee to transfer to.');
+                if (isNaN(amount) || amount <= 0) return alert('Enter a valid transfer amount.');
+                
+                const sender = state.employees.find(e => e.id === currentUser.id);
+                const receiver = state.employees.find(e => e.id === toId);
+                const senderWorth = getTotalWorth(sender);
+                
+                if (amount > senderWorth) return alert(`You only have ${senderWorth.toFixed(2)} Br available for transfer.`);
+                
+                if (transferBirrValue(sender, receiver, amount)) {
+                    recordCouponTransfer('EMPLOYEE', sender, receiver, amount);
+                    await save('EMPLOYEE_COUPON_TRANSFER');
+                    alert(`✅ Transferred ${amount.toFixed(2)} Br to ${receiver.name}!`);
+                    empCouponTransferToId = null;
+                    render('order');
+                } else {
+                    alert('Transfer failed. Please try again.');
+                }
+            };
+        }
+
+        // Employee coupon transfer picker functions (attached to window so onclick/oninput handlers work)
+        window.empCouponTransferSelectEmp = function(id) {
+            empCouponTransferToId = (empCouponTransferToId === id) ? null : id;
+            render('order');
+        };
+        window.empCouponTransferOnSearch = function(val) {
+            empCouponTransferSearchQuery = val;
+            const clearBtn = $('empTransferPickerClearBtn');
+            if (clearBtn) clearBtn.classList.toggle('visible', !!val);
+            // Re-render picker list only (no full re-render so typing is not interrupted)
+            const pickerList = $('empTransferPickerPickerList');
+            if (pickerList) {
+                const emps = employeesByName(state.employees.filter(e => e.role === 'employee' && e.id !== currentUser.id));
+                const filtered = val ? emps.filter(e => employeeMatches(e, val)) : emps;
+                if (!filtered.length) {
+                    pickerList.innerHTML = `<div class="emp-no-results"><i class="fas fa-search"></i> No employees match "${esc(val)}"</div>`;
+                } else {
+                    pickerList.innerHTML = filtered.map(e => {
+                        const isSelected = e.id === empCouponTransferToId;
+                        const worth = getTotalWorth(e);
+                        const onLeave = e.status === 'On Leave';
+                        return `<div class="emp-card${isSelected ? ' selected' : ''}${onLeave ? ' on-leave' : ''}" onclick="empCouponTransferSelectEmp('${e.id}')" title="${esc(e.name)} (${esc(e.username)})">
+                            <i class="fas fa-check emp-card-check"></i>
+                            <div class="emp-card-name">${esc(e.name)}</div>
+                            <div class="emp-card-meta">@${esc(e.username)}${onLeave ? ' · <span style="color:var(--danger)">On Leave</span>' : ''}</div>
+                            <div class="emp-card-balance">${worth.toFixed(2)} Br</div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+        };
+        window.empCouponTransferClearSearch = function() {
+            empCouponTransferSearchQuery = '';
+            const inp = $('empTransferPickerSearchInput');
+            if (inp) { inp.value = ''; inp.focus(); }
+            window.empCouponTransferOnSearch('');
+        };
+        window.empCouponTransferClearEmp = function() {
+            empCouponTransferToId = null;
+            render('order');
+        };
+    }
+
+    if (tab === 'wallet') {
+        $('adminWalletDepositBtn').onclick = async () => {
+            const empId = $('adminWalletDepositEmp').value;
+            const amount = parseFloat($('adminWalletDepositAmount').value);
+            if (!empId) return alert('Select an employee.');
+            if (!amount || amount < 0.01 || isNaN(amount)) return alert('Enter a valid amount.');
+
+            const emp = state.employees.find(e => e.id === empId);
+            if (emp) {
+                emp.walletCents = (emp.walletCents || 0) + moneyToCents(amount);
+                await save('ADMIN_WALLET_DEPOSIT');
+                alert(`✅ Deposited ${amount.toFixed(2)} Br to ${emp.name}'s wallet.`);
+                render('wallet');
+            }
+        };
+
+        window.adminWalletDepositOnSearch = function(val) {
+            walletDepositSearchQuery = val;
+            const select = $('adminWalletDepositEmp');
+            if (select) {
+                const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+                const filtered = val ? emps.filter(e => employeeMatches(e, val)) : emps;
+                select.innerHTML = '<option value="">-- Select Employee --</option>' + filtered.map(e => `<option value="${e.id}">${esc(e.name)} (Wallet: ${((e.walletCents || 0) / BIRR_CENTS).toFixed(2)} Br)</option>`).join('');
+            }
+        };
+    }
+
+    if (tab === 'cafe') {
+        $('addDishBtn').onclick = async () => {
+            const name = $('dishName').value.trim();
+            const price = parseFloat($('dishPrice').value);
+            if (!name || isNaN(price) || price <= 0) return alert('Enter valid dish name and price.');
+            
+            if (editDishId) {
+                const dish = state.menu.find(m => m.id === editDishId);
+                if (dish) {
+                    dish.name = name;
+                    dish.price = price;
+                    await save('DISH_EDITED');
+                }
+                editDishId = null;
+            } else {
+                const maxOrder = state.menu.reduce((mx, m) => Math.max(mx, m.sortOrder ?? 0), -1);
+                state.menu.push({ id: genId(), name, price, available: true, sortOrder: maxOrder + 1 });
+                await save('DISH_ADDED');
+            }
+            render('cafe');
+        };
+        
+        const btnCancelDish = $('cancelEditDishBtn');
+        if (btnCancelDish) btnCancelDish.onclick = () => {
+            editDishId = null;
+            render('cafe');
+        };
+
+        // Cafe Bureau live employee picker functions (attached to window so onclick handlers work)
+        window.cafeEmpSelectEmp = function(id) {
+            cafeSelectedEmpId = (cafeSelectedEmpId === id) ? null : id; // toggle deselect
+            render('cafe');
+        };
+        window.cafeEmpOnSearch = function(val) {
+            cafeEmpSearchQuery = val;
+            const clearBtn = $('cafeEmpClearBtn');
+            if (clearBtn) clearBtn.classList.toggle('visible', !!val);
+            // Re-render picker list only (no full re-render to keep password intact)
+            const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+            const pickerList = $('cafeEmpPickerList');
+            if (pickerList) {
+                const filtered = val ? emps.filter(e => employeeMatches(e, val)) : emps;
+                if (!filtered.length) {
+                    pickerList.innerHTML = `<div class="emp-no-results"><i class="fas fa-search"></i> No employees match "${esc(val)}"</div>`;
+                } else {
+                    pickerList.innerHTML = filtered.map(e => {
+                        const isSelected = e.id === cafeSelectedEmpId;
+                        const onLeave = e.status === 'On Leave';
+                        const worth = getTotalWorth(e);
+                        return `<div class="emp-card${isSelected ? ' selected' : ''}${onLeave ? ' on-leave' : ''}" onclick="cafeEmpSelectEmp('${e.id}')" title="${esc(e.name)}">
+                            <i class="fas fa-check emp-card-check"></i>
+                            <div class="emp-card-name">${esc(e.name)}</div>
+                            <div class="emp-card-meta">@${esc(e.username)}${onLeave ? ' · <span style="color:var(--danger)">On Leave</span>' : ''}</div>
+                            <div class="emp-card-balance">${worth.toFixed(2)} Br</div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+        };
+        window.cafeEmpClearSearch = function() {
+            cafeEmpSearchQuery = '';
+            const inp = $('cafeEmpSearchInput');
+            if (inp) { inp.value = ''; inp.focus(); }
+            window.cafeEmpOnSearch('');
+        };
+        window.cafeClearEmp = function() {
+            cafeSelectedEmpId = null;
+            render('cafe');
+        };
+
+        // Admin transfer search functions
+        window.cafeTransferFromOnSearch = function(val) {
+            transferFromSearchQuery = val;
+            const select = $('cafeTransferFrom');
+            if (select) {
+                const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+                const filtered = val ? emps.filter(e => employeeMatches(e, val)) : emps;
+                select.innerHTML = '<option value="">-- Select Sender --</option>' + filtered.map(e => `<option value="${e.id}">${esc(e.name)} (${getTotalWorth(e).toFixed(2)} Br)</option>`).join('');
+            }
+        };
+        window.cafeTransferToOnSearch = function(val) {
+            transferToSearchQuery = val;
+            const select = $('cafeTransferTo');
+            if (select) {
+                const emps = employeesByName(state.employees.filter(e => e.role === 'employee'));
+                const filtered = val ? emps.filter(e => employeeMatches(e, val)) : emps;
+                select.innerHTML = '<option value="">-- Select Receiver --</option>' + filtered.map(e => `<option value="${e.id}">${esc(e.name)} (${getTotalWorth(e).toFixed(2)} Br)</option>`).join('');
+            }
+        };
+
+
+
+        $('authAddToCartBtn').onclick = () => addCartItem('auth', 'authDishSelect', 'authDishQty');
+
+        $('authCouponOrderBtn').onclick = () => placeAdminOrder('Coupon Balance');
+        $('authWalletOrderBtn').onclick = () => placeAdminOrder('Wallet Balance');
+        $('authCashOrderBtn').onclick = () => placeAdminOrder('Cash');
+
+        $('cafeTransferBtn').onclick = async () => {
+            const fromId = $('cafeTransferFrom').value;
+            const toId = $('cafeTransferTo').value;
+            const amount = parseFloat($('cafeTransferAmount').value);
+            const password = $('cafeTransferPassword').value;
+            
+            if (!fromId || !toId || fromId === toId) return alert('Select different sender and receiver.');
+            if (!amount || amount < 0.01 || isNaN(amount)) return alert('Enter a valid amount.');
+            if (!password) return alert('Enter the sender\'s password for consent.');
+
+            const sender = state.employees.find(e => e.id === fromId);
+            const receiver = state.employees.find(e => e.id === toId);
+            const senderWorth = getTotalWorth(sender);
+            
+            if (amount > senderWorth) return alert(`Sender only has ${senderWorth.toFixed(2)} Br.`);
+            
+            // Verify sender's password for consent
+            const passwordValid = await verify(sender, password);
+            if (!passwordValid) return alert('❌ Incorrect password. Transfer cancelled for security.');
+            
+            if (transferBirrValue(sender, receiver, amount)) {
+                recordCouponTransfer('ADMIN', sender, receiver, amount);
+                await save('ADMIN_BIRR_COUPON_TRANSFERRED');
+                alert(`✅ Transferred ${amount.toFixed(2)} Br from ${sender.name} to ${receiver.name}.`);
+                $('cafeTransferPassword').value = ''; // Clear password for security
+                render('cafe');
+            } else {
+                alert('Transfer failed.');
+            }
+        };
+
+
+
+        $('saveQuoteBtn').onclick = async () => {
+            state.dailyQuote = $('dailyQuoteInput').value.trim();
+            await save('DAILY_QUOTE_UPDATED');
+            alert('✅ Quote of the day saved!');
+            render('cafe');
+        };
+    }
+
+    if (tab === 'walkin') {
+        $('addWalkinDishBtn').onclick = async () => {
+            const name = $('walkinDishName').value.trim();
+            const price = parseFloat($('walkinDishPrice').value);
+            if (!name || isNaN(price) || price <= 0) return alert('Enter valid dish name and price.');
+
+            if (editWalkinDishId) {
+                const dish = state.walkinMenu.find(m => m.id === editWalkinDishId);
+                if (dish) {
+                    dish.name = name;
+                    dish.price = price;
+                    await save('WALKIN_DISH_EDITED');
+                }
+                editWalkinDishId = null;
+            } else {
+                const maxOrder = state.walkinMenu.reduce((mx, m) => Math.max(mx, m.sortOrder ?? 0), -1);
+                state.walkinMenu.push({ id: genId(), name, price, available: true, sortOrder: maxOrder + 1 });
+                await save('WALKIN_DISH_ADDED');
+            }
+            render('walkin');
+        };
+
+        const btnCancelWalkin = $('cancelEditWalkinDishBtn');
+        if (btnCancelWalkin) btnCancelWalkin.onclick = () => {
+            editWalkinDishId = null;
+            render('walkin');
+        };
+
+        $('walkinAddToCartBtn').onclick = () => addCartItem('walkin', 'walkinDishSelect', 'walkinDishQty');
+
+        $('walkinOrderBtn').onclick = async () => {
+            if (!walkinCart.length) return alert('Add at least one dish to the cart.');
+
+            pushOrdersFromCart(walkinCart, {
+                customer: 'Walk-in Customer',
+                employeeId: null,
+                payment: 'Cash',
+                authorizedBy: currentUser.username
+            });
+
+            const total = cartTotal(walkinCart);
+            walkinCart = [];
+            await save('WALKIN_ORDER_PLACED');
+            alert(`✅ Walk-in order placed (${total.toFixed(2)} Br).`);
+            render('walkin');
+        };
+    }
+
+    if (tab === 'hr') {
+        // HR roster search — attached inline via oninput in hrView HTML, but also expose globally
+        window.hrOnSearchInput = function(val) {
+            hrEmpSearchQuery = val;
+            const clearBtn = $('hrClearBtn');
+            if (clearBtn) clearBtn.classList.toggle('visible', !!val);
+            const emps = state.employees.filter(x => x.role === 'employee' && employeeMatches(x, val));
+            const roster = $('hrRosterList');
+            if (roster) roster.innerHTML = hrRosterItemsHtml(emps);
+        };
+        window.hrClearSearch = function() {
+            hrEmpSearchQuery = '';
+            const inp = $('hrEmpSearch');
+            if (inp) { inp.value = ''; inp.focus(); }
+            const clearBtn = $('hrClearBtn');
+            if (clearBtn) clearBtn.classList.remove('visible');
+            const emps = state.employees.filter(x => x.role === 'employee');
+            const roster = $('hrRosterList');
+            if (roster) roster.innerHTML = hrRosterItemsHtml(emps);
+        };
+
+        $('registerEmpBtn').onclick = async () => {
+            const name = $('newEmpName').value.trim();
+            const username = $('newEmpUser').value.trim();
+            const password = $('newEmpPw').value.trim();
+
+            if (!name || !username || !password) return alert('Fill all fields.');
+            if (state.employees.some(e => e.username === username)) return alert('Username already taken.');
+
+            const pw = await makePw(password);
+            state.employees.push({
+                id: genId(),
+                username,
+                name,
+                role: 'employee',
+                status: 'At Work',
+                coupons: 5,
+                nightCoupons: 0,
+                regularCents: 5 * COUPON_CENTS,
+                nightCents: 0,
+                walletCents: 0,
+                walletDepositRequested: 0,
+                nightRequested: false,
+                pw
+            });
+
+            await save('EMPLOYEE_REGISTERED');
+            alert(`✅ Registered ${name}!`);
+            render('hr');
+        };
+
+        $('markAllWorkBtn').onclick = async () => {
+            state.employees.filter(e => e.role === 'employee').forEach(ensureCouponLedger);
+            // Only At Work employees are swept & reset. Employees On Leave are left untouched
+            // (their remaining coupons and status are reverted/kept as they are).
+            const targets = state.employees.filter(e => e.role === 'employee' && e.status === 'At Work');
+            const skipped = state.employees.filter(e => e.role === 'employee' && e.status !== 'At Work');
+            const totalLeftoverCents = targets.reduce((a, e) => a + Math.max(0, e.regularCents + e.nightCents), 0);
+            const msg = `Weekly reset:\n\n• ${targets.length} employee(s) AT WORK: leftover coupons (${(totalLeftoverCents / BIRR_CENTS).toFixed(2)} Br total) will be sent to Wallet Approvals, then they receive fresh 5 coupons.\n• ${skipped.length} employee(s) ON LEAVE: left untouched.\n\nContinue?`;
+            if (!confirm(msg)) return;
+            let sweptCount = 0;
+            targets.forEach(e => {
+                const leftover = e.regularCents + e.nightCents;
+                if (leftover > 0) {
+                    e.couponSweepPendingCents = (e.couponSweepPendingCents || 0) + leftover;
+                    sweptCount++;
+                }
+                e.regularCents = 5 * COUPON_CENTS;
+                e.nightCents = 0;
+                syncCouponDisplay(e);
+                e.nightRequested = false;
+            });
+            await save('ALL_EMPLOYEES_RESET_WORK');
+            alert(sweptCount
+                ? `✅ Reset ${targets.length} employee(s) to At Work & 5 coupons. Leftover coupons from ${sweptCount} employee(s) (${(totalLeftoverCents / BIRR_CENTS).toFixed(2)} Br) are waiting in Wallet Approvals.`
+                : `✅ Reset ${targets.length} employee(s) to At Work & 5 coupons. No leftover coupons to sweep.`);
+            render('hr');
+        };
+
+        $('markAllLeaveBtn').onclick = async () => {
+            if (!confirm('Mark all employees On Leave?')) return;
+            state.employees.forEach(e => { if (e.role === 'employee') e.status = 'On Leave'; });
+            await save('ALL_EMPLOYEES_SET_LEAVE');
+            render('hr');
+        };
+    }
+
+    if (tab === 'sync') {
+        const fileInput = $('syncFileInput');
+
+        const btnExportHr = $('exportHrPkgBtn');
+        if (btnExportHr) btnExportHr.onclick = () => {
+            const pkg = {
+                type: 'HR_PACKAGE',
+                createdAt: now(),
+                siteId: state.siteId,
+                employees: state.employees.filter(e => e.role === 'employee').map(e => ({
+                    ...e,
+                    regularCents: e.regularCents,
+                    nightCents: e.nightCents,
+                    walletCents: e.walletCents || 0,
+                    walletDepositRequested: e.walletDepositRequested || 0
+                }))
+            };
+            downloadFile(`habesha_hr_${now().slice(0, 10)}.json`, JSON.stringify(pkg, null, 2));
+        };
+
+        const btnExportCafe = $('exportCafePkgBtn');
+        if (btnExportCafe) btnExportCafe.onclick = () => {
+            const pkg = {
+                type: 'CAFE_PACKAGE',
+                createdAt: now(),
+                siteId: state.siteId,
+                orders: state.orders.filter(o => o.payment.includes('Coupon') || o.payment.includes('Wallet')),
+                menu: state.menu,
+                walkinMenu: state.walkinMenu,
+                dailyQuote: state.dailyQuote || ''
+            };
+            downloadFile(`habesha_cafe_${now().slice(0, 10)}.json`, JSON.stringify(pkg, null, 2));
+        };
+
+        const triggerImport = (expectedType) => {
+            fileInput.value = '';
+            fileInput.onchange = async () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+                try {
+                    const data = JSON.parse(await file.text());
+                    if (data.type === 'HR_PACKAGE' && expectedType === 'HR_PACKAGE') {
+                        data.employees.forEach(e => {
+                            ensureCouponLedger(e);
+                            let local = state.employees.find(x => x.id === e.id || x.username === e.username);
+                            if (local) {
+                                local.status = e.status;
+                                local.regularCents = e.regularCents;
+                                local.nightCents = e.nightCents;
+                                syncCouponDisplay(local);
+                                local.nightRequested = e.nightRequested;
+                                local.walletCents = typeof e.walletCents === 'number' ? e.walletCents : (local.walletCents || 0);
+                                local.walletDepositRequested = typeof e.walletDepositRequested === 'number' ? e.walletDepositRequested : (local.walletDepositRequested || 0);
+                            } else {
+                                if (typeof e.walletCents !== 'number') e.walletCents = 0;
+                                if (typeof e.walletDepositRequested !== 'number') e.walletDepositRequested = 0;
+                                state.employees.push(e);
+                            }
+                        });
+                        await save('HR_PACKAGE_IMPORTED');
+                        alert('✅ HR Package imported — all coupon and wallet balances preserved!');
+                    } else if (data.type === 'CAFE_PACKAGE' && expectedType === 'CAFE_PACKAGE') {
+                        const known = new Set(state.orders.map(o => o.id));
+                        (data.orders || []).forEach(o => { if (!known.has(o.id)) state.orders.push(o); });
+                        if (data.menu) state.menu = data.menu;
+                        if (data.walkinMenu) state.walkinMenu = data.walkinMenu;
+                        if (data.dailyQuote) state.dailyQuote = data.dailyQuote;
+                        ensureMenuSortOrder();
+                        await save('CAFE_PACKAGE_IMPORTED');
+                        alert('✅ Cafe Package imported successfully!');
+                    } else {
+                        alert('❌ Package type mismatch!');
+                    }
+                    render('sync');
+                } catch (e) {
+                    alert('❌ Failed to parse JSON package.');
+                }
+            };
+            fileInput.click();
+        };
+
+        const btnImportFull = $('importFullBackupBtn');
+        if (btnImportFull) btnImportFull.onclick = () => {
+            fileInput.value = '';
+            fileInput.onchange = async () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+                if (!confirm('⚠️ This will replace ALL current data with the backup. Continue?')) return;
+                try {
+                    const data = JSON.parse(await file.text());
+                    const imported = data.state || data;
+                    if (!imported.employees || !imported.menu) {
+                        return alert('❌ Invalid backup file — missing employees or menu.');
+                    }
+                    state = imported;
+                    state.employees.forEach(e => {
+                        ensureCouponLedger(e);
+                        if (typeof e.walletCents !== 'number') e.walletCents = 0;
+                        if (typeof e.walletDepositRequested !== 'number') e.walletDepositRequested = 0;
+                    });
+                    ensureWalkinMenu();
+                    ensureMenuSortOrder();
+                    if (!state.dailyQuote) state.dailyQuote = '';
+                    await putState();
+                    alert('✅ Full database restored — all balances and orders preserved!');
+                    render('sync');
+                } catch (e) {
+                    alert('❌ Failed to parse backup file.');
+                }
+            };
+            fileInput.click();
+        };
+
+        const btnImportHr = $('importHrPkgBtn');
+        if (btnImportHr) btnImportHr.onclick = () => triggerImport('HR_PACKAGE');
+        const btnImportCafe = $('importCafePkgBtn');
+        if (btnImportCafe) btnImportCafe.onclick = () => triggerImport('CAFE_PACKAGE');
+    }
+
+    if (tab === 'profile') {
+        $('saveProfileBtn').onclick = async () => {
+            const username = $('profileUser').value.trim();
+            const password = $('profilePw').value.trim();
+            if (!username) return alert('Username cannot be empty.');
+
+            currentUser.username = username;
+            const user = state.employees.find(e => e.id === currentUser.id);
+            user.username = username;
+
+            if (password) user.pw = await makePw(password);
+
+            await save('PROFILE_UPDATED');
+            $('profileMsg').innerHTML = '<span class="pill ok">Saved profile changes!</span>';
+        };
+    }
+}
+
+async function placeAdminOrder(paymentMethod) {
+    const empId = cafeSelectedEmpId;
+    const pw = $('authEmpPw').value.trim();
+    const msg = $('authStatusMsg');
+
+    if (!empId) return msg.innerHTML = '<span class="error">Please select an employee first.</span>';
+    if (!pw) return msg.innerHTML = '<span class="error">Enter the employee\'s password.</span>';
+    if (!authCart.length) return msg.innerHTML = '<span class="error">Add at least one dish to the cart.</span>';
+
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return msg.innerHTML = '<span class="error">Employee not found — please re-select.</span>';
+    if (!await verify(emp, pw)) return msg.innerHTML = '<span class="error">Invalid employee password.</span>';
+    if (emp.status !== 'At Work') return msg.innerHTML = '<span class="error">Employee is currently On Leave and cannot order.</span>';
+
+    const total = cartTotal(authCart);
+    let paymentParts = null;
+
+    if (paymentMethod === 'Coupon Balance') {
+        const totalWorth = getTotalWorth(emp);
+        if (totalWorth >= total) {
+            if (!deductCouponBalance(emp, total)) {
+                return msg.innerHTML = '<span class="error">Failed to deduct balance — please try again.</span>';
+            }
+        } else {
+            const couponUsed = totalWorth;
+            const remainder = round(total - couponUsed);
+            const remainderMethod = await promptRemainderPayment(emp, remainder, couponUsed);
+            paymentParts = applyMixedPayment(emp, total, remainderMethod);
+            if (!paymentParts) return msg.innerHTML = '<span class="error">Order cancelled.</span>';
+        }
+    } else if (paymentMethod === 'Wallet Balance') {
+        const walletBirr = (emp.walletCents || 0) / BIRR_CENTS;
+        if (walletBirr < total) {
+            return msg.innerHTML = `<span class="error">Insufficient Wallet balance (${walletBirr.toFixed(2)} Br) for this order (${total.toFixed(2)} Br).</span>`;
+        }
+        emp.walletCents -= moneyToCents(total);
+    } else if (paymentMethod === 'Cash') {
+        // Cash — no balance deduction
+    }
+
+    pushOrdersFromCart(authCart, {
+        customer: emp.name,
+        employeeId: emp.id,
+        payment: paymentParts ? paymentLabel(paymentParts) : paymentMethod,
+        paymentParts,
+        authorizedBy: currentUser.username
+    });
+
+    authCart = [];
+    cafeSelectedEmpId = null;
+    cafeEmpSearchQuery = '';
+    await save('AUTHORIZED_EMPLOYEE_ORDER');
+    alert(`✅ Order authorized for ${emp.name} (${total.toFixed(2)} Br)!`);
+    if (paymentMethod === 'Cash' || (paymentParts && paymentParts.cashUsed > 0)) {
+        $('paymentModal').classList.remove('hidden');
+    }
+    render('cafe');
+}
+
+async function placeEmployeeOrder(paymentMethod) {
+    const emp = state.employees.find(e => e.id === currentUser.id);
+    if (emp.status !== 'At Work') return alert('You are currently On Leave.');
+
+    if (!employeeCart.length) return alert('Add at least one dish to your cart.');
+    const total = cartTotal(employeeCart);
+    let paymentParts = null;
+
+    if (paymentMethod === 'Coupon Balance') {
+        const totalWorth = getTotalWorth(emp);
+        if (totalWorth >= total) {
+            if (!deductCouponBalance(emp, total)) {
+                return alert('Failed to deduct coupon balance.');
+            }
+        } else {
+            const couponUsed = totalWorth;
+            const remainder = round(total - couponUsed);
+            const remainderMethod = await promptRemainderPayment(emp, remainder, couponUsed);
+            paymentParts = applyMixedPayment(emp, total, remainderMethod);
+            if (!paymentParts) return alert('Order cancelled.');
+        }
+    } else if (paymentMethod === 'Wallet Balance') {
+        const walletBirr = (emp.walletCents || 0) / BIRR_CENTS;
+        if (walletBirr < total) {
+            return alert(`Insufficient Wallet balance (${walletBirr.toFixed(2)} Br) for this order (${total.toFixed(2)} Br).`);
+        }
+        emp.walletCents -= moneyToCents(total);
+    } else if (paymentMethod === 'Cash') {
+        // Cash — no balance deduction
+    }
+
+    pushOrdersFromCart(employeeCart, {
+        customer: emp.name,
+        employeeId: emp.id,
+        payment: paymentParts ? paymentLabel(paymentParts) : paymentMethod,
+        paymentParts
+    });
+
+    const summary = employeeCart.map(c => `${c.name} x${c.qty}`).join(', ');
+    employeeCart = [];
+    await save('EMPLOYEE_ORDER_PLACED');
+    alert(`✅ Order placed: ${summary} (${total.toFixed(2)} Br)!`);
+    render('order');
+}
+
+function downloadFile(name, text) {
+    const a = document.createElement('a');
+    const mimeType = name.endsWith('.json') ? 'application/json' : 
+                     name.endsWith('.docx') ? 'text/html' : 
+                     'text/html';
+    a.href = URL.createObjectURL(new Blob([text], { type: mimeType }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// Authentication
+async function login() {
+    const username = $('loginUser').value.trim();
+    const password = $('loginPass').value.trim();
+
+    if (!username || !password) {
+        $('loginMsg').textContent = 'Please enter both username and password.';
+        return;
+    }
+
+    const user = state.employees.find(e => e.username === username);
+    if (!user) {
+        $('loginMsg').textContent = 'User not found. Please check your username.';
+        return;
+    }
+
+    if (!await verify(user, password)) {
+        $('loginMsg').textContent = 'Invalid password. Please try again.';
+        return;
+    }
+
+    currentUser = { ...user };
+    $('loginView').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    $('roleBadge').textContent = roleName(currentUser.role);
+    $('resetDbBtn').classList.toggle('hidden', currentUser.role !== 'admin' && currentUser.role !== 'superadmin');
+
+    render('home');
+}
+
+$('loginBtn').onclick = login;
+$('loginPass').onkeydown = e => { if (e.key === 'Enter') login(); };
+
+$('showSignupBtn').onclick = () => {
+    $('loginView').classList.add('hidden');
+    $('signupView').classList.remove('hidden');
+};
+
+$('cancelSignupBtn').onclick = () => {
+    $('signupView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+};
+
+$('doSignupBtn').onclick = async () => {
+    const name = $('regName').value.trim();
+    const user = $('regUser').value.trim();
+    const pass = $('regPass').value.trim();
+    if (!name || !user || !pass) return $('signupMsg').textContent = 'Please fill all fields.';
+    if (state.employees.some(e => e.username === user)) return $('signupMsg').textContent = 'Username already taken.';
+    
+    const pw = await makePw(pass);
+    const newEmp = {
+        id: uuidv4(),
+        username: user,
+        name: name,
+        role: 'employee',
+        status: 'At Work',
+        coupons: 0,
+        nightCoupons: 0,
+        regularCents: 0,
+        nightCents: 0,
+        walletCents: 0,
+        walletDepositRequested: 0,
+        nightRequested: false,
+        pw
+    };
+    state.employees.push(newEmp);
+    await save('EMPLOYEE_SELF_REGISTERED');
+    alert('Account created successfully! You can now log in.');
+    $('regName').value = '';
+    $('regUser').value = '';
+    $('regPass').value = '';
+    $('signupMsg').textContent = '';
+    $('signupView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+};
+
+$('resetDbBtn').onclick = async () => {
+    if (!confirm('🚨 WARNING: This will permanently wipe ALL employees, menu items, orders, and reports. Are you absolutely sure?')) return;
+    if (prompt('Type "RESET" to confirm wipe:') !== 'RESET') return alert('Reset cancelled.');
+    
+    state = seed();
+    state.siteId = tenantId(); // keep café site id in sync with its tenant
+    const defs = [
+        ['superadmin', 'Super Admin', 'superadmin'],
+        ['admin', 'Cafe Admin', 'admin']
+    ];
+    for (const [u, n, r] of defs) {
+        const pw = await makePw('admin123');
+        state.employees.push({
+            id: genId(), username: u, name: n, role: r, status: 'At Work',
+            coupons: 0, nightCoupons: 0, regularCents: 0, nightCents: 0, 
+            walletCents: 0, walletDepositRequested: 0, nightRequested: false, pw
+        });
+    }
+    await putState();
+    alert('Database has been completely reset.');
+    location.reload();
+};
+
+$('logoutBtn').onclick = () => {
+    currentUser = null;
+    $('app').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+    $('loginPass').value = '';
+};
+
+$('backupBtn').onclick = () => downloadFile(`habesha_full_backup_${now().slice(0, 10)}.json`, JSON.stringify(state, null, 2));
+$('showPaymentDetailsBtn').onclick = () => $('paymentModal').classList.remove('hidden');
+$('closePaymentModalBtn').onclick = () => $('paymentModal').classList.add('hidden');
+$('remainderModalCancelBtn').onclick = () => closeRemainderModal(null);
+
+// Initialization
+initialize().catch(e => {
+    console.error('Initialization failed:', e);
+    const detail = e && e.message ? ` ${e.message}` : '';
+    $('loginMsg').textContent = `Failed to initialize the app.${detail}`;
+});
+</script>
+</body>
+</html>
