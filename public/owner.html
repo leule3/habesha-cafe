@@ -441,8 +441,9 @@ window.rotateKey = async (cafeId) => {
 };
 
 window.deleteCafe = async (cafeId) => {
-    if (!confirm('🚨 PERMANENTLY DELETE café "' + cafeId + '" and ALL its data? This cannot be undone.')) return;
-    if (prompt('Type the café id "' + cafeId + '" to confirm:') !== cafeId) return alert('Deletion cancelled.');
+    // Simple, human-friendly confirmation — no need to retype the café id.
+    if (!confirm('🗑️ Permanently delete this café?\n\nAll its data (employees, menu, orders, reports) will be removed. This cannot be undone.')) return;
+    if (prompt('This cannot be undone. Type DELETE to confirm:') !== 'DELETE') return alert('Deletion cancelled — nothing was deleted.');
     try {
         await api('/cafes/' + encodeURIComponent(cafeId), { method: 'DELETE' });
         notice('✅ Café deleted.');

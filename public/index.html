@@ -216,28 +216,7 @@
 <div id="paymentModal" class="modal-overlay hidden">
     <div class="modal-box">
         <h3 class="title" style="margin-bottom: 12px;"><i class="fas fa-mobile-alt"></i> Digital Payment Accounts</h3>
-        <p class="sub" style="margin-bottom: 16px;">Transfer cash via Telebirr or CBE, then present transaction details to the cashier.</p>
-
-        <!-- CBE Account -->
-        <div class="payment-card">
-            <div>
-                <div style="font-weight: 700; font-size: 0.9rem;"><i class="fas fa-university" style="color: #6a1b9a;"></i> Commercial Bank of Ethiopia</div>
-                <div class="sub">Account Name: <b>Evlogia cafe & Restaurant</b></div>
-                <div class="account-num">1000 6391 56722</div>
-            </div>
-            <button class="small outline" onclick="copyToClipboard('1000639156722', 'CBE Account Number')"><i class="fas fa-copy"></i> Copy</button>
-        </div>
-
-        <!-- Telebirr Account -->
-        <div class="payment-card">
-            <div>
-                <div style="font-weight: 700; font-size: 0.9rem;"><i class="fas fa-mobile-alt" style="color: #0088cc;"></i> Telebirr Mobile Pay</div>
-                <div class="sub">Account Name: <b>Evlogia cafe & Restaurant Enterprise</b></div>
-                <div class="account-num">09 12 79 25 46</div>
-            </div>
-            <button class="small outline" onclick="copyToClipboard('0912792546', 'Telebirr Number')"><i class="fas fa-copy"></i> Copy</button>
-        </div>
-
+        <div id="paymentModalBody"></div>
         <button class="primary" style="width:100%; margin-top: 10px;" id="closePaymentModalBtn">Close Window</button>
     </div>
 </div>
@@ -993,7 +972,7 @@ function hrRosterItemsHtml(emps) {
             </div>
             <div class="hr-emp-actions">
                 <button class="small success" onclick="grantRegularCoupon('${e.id}')"><i class="fas fa-ticket-alt"></i> +1 Regular Coupon</button>
-                <button class="small primary" title="Clear this week's leftover coupons and notify the Cafe Admin to deposit them into this employee's wallet" onclick="resetWeeklyCoupons('${e.id}')"><i class="fas fa-sync-alt"></i> Weekly Reset &amp; Sweep</button>
+                <button class="small primary" title="Sweep leftover coupons to Wallet Approvals and set balance to 0. Fresh coupons must be granted separately." onclick="resetWeeklyCoupons('${e.id}')"><i class="fas fa-broom"></i> Sweep &amp; Reset</button>
                 ${e.nightRequested ? `
                     <button class="small night" onclick="approveNightCoupon('${e.id}')"><i class="fas fa-moon"></i> Approve Night Bonus</button>
                 ` : `
@@ -1027,7 +1006,14 @@ function seed() {
         audit: [],
         dailyQuote: '',
         lastWeeklyRefresh: null,
-        weeklyArchives: []
+        weeklyArchives: [],
+        ranking: [], // all-time employee ranking totals (survives week archives)
+        paymentAccounts: {
+            cbeName: 'Evlogia cafe & Restaurant',
+            cbeNumber: '1000639156722',
+            telebirrName: 'Evlogia cafe & Restaurant Enterprise',
+            telebirrNumber: '0912792546'
+        }
     };
 }
 
@@ -1048,9 +1034,9 @@ async function initialize() {
                 name: n,
                 role: r,
                 status: 'At Work',
-                coupons: r === 'employee' ? 5 : 0,
+                coupons: 0, // All employees start with 0 coupons - superadmin must grant them
                 nightCoupons: 0,
-                regularCents: r === 'employee' ? 5 * COUPON_CENTS : 0,
+                regularCents: 0,
                 nightCents: 0,
                 walletCents: 0,
                 walletDepositRequested: 0,
@@ -1075,6 +1061,16 @@ async function initialize() {
         if (!state.dailyQuote) { state.dailyQuote = ''; migrated = true; }
         if (!state.lastWeeklyRefresh) { state.lastWeeklyRefresh = null; }
         if (!state.weeklyArchives) { state.weeklyArchives = []; migrated = true; }
+        if (!Array.isArray(state.ranking)) { state.ranking = []; migrated = true; }
+        if (!state.paymentAccounts) {
+            state.paymentAccounts = {
+                cbeName: 'Evlogia cafe & Restaurant',
+                cbeNumber: '1000639156722',
+                telebirrName: 'Evlogia cafe & Restaurant Enterprise',
+                telebirrNumber: '0912792546'
+            };
+            migrated = true;
+        }
         if (!Array.isArray(state.transfers)) { state.transfers = []; migrated = true; }
         if (migrated) await putState();
     }
@@ -1091,10 +1087,40 @@ function getWeekNumber(date) {
     return { year: d.getUTCFullYear(), week: weekNo };
 }
 
+// ── Employee ranking (persists across week archives) ─────────────────────────
+// Cumulative totals from every archived / cleared week live in state.ranking.
+// The current week's live orders are added on top, so archiving a week and
+// starting fresh never resets the ranking.
+function getRankings() {
+    const totals = Array.isArray(state.ranking) ? state.ranking : [];
+    return state.employees.filter(e => e.role === 'employee').map(e => {
+        const saved = totals.find(r => r.employeeId === e.id) || { spent: 0, orders: 0 };
+        const empOrders = state.orders.filter(o => o.employeeId === e.id);
+        return {
+            id: e.id,
+            name: e.name,
+            spent: round((saved.spent || 0) + empOrders.reduce((a, o) => a + o.total, 0)),
+            orders: (saved.orders || 0) + empOrders.length
+        };
+    }).sort((a, b) => b.spent - a.spent || b.orders - a.orders); // Rank by amount spent (top spender = King)
+}
+
+function accumulateRankingFromOrders(orders) {
+    if (!Array.isArray(state.ranking)) state.ranking = [];
+    state.employees.filter(e => e.role === 'employee').forEach(e => {
+        const empOrders = orders.filter(o => o.employeeId === e.id);
+        if (!empOrders.length) return;
+        let entry = state.ranking.find(r => r.employeeId === e.id);
+        if (!entry) { entry = { employeeId: e.id, spent: 0, orders: 0 }; state.ranking.push(entry); }
+        entry.spent = round((entry.spent || 0) + empOrders.reduce((a, o) => a + o.total, 0));
+        entry.orders += empOrders.length;
+    });
+}
+
 window.archiveCurrentWeek = async function(requireConfirmation = true) {
     if (state.orders.length === 0) return alert('No orders to archive.');
     
-    if (requireConfirmation && !confirm('This will archive all current week orders and start a fresh week. Continue?')) return;
+    if (requireConfirmation && !confirm('This will download this week\'s report (DOCX + JSON), archive all current week orders and start a fresh week.\n\nThe employee ranking is NOT reset. Continue?')) return;
     
     const nowDate = new Date();
     const weekStart = new Date(nowDate);
@@ -1125,6 +1151,10 @@ window.archiveCurrentWeek = async function(requireConfirmation = true) {
         }
     };
     
+    // Keep the all-time employee ranking: fold this week's totals into the
+    // persistent ranking before the orders are cleared.
+    accumulateRankingFromOrders(state.orders);
+    
     state.weeklyArchives.push(archive);
     state.orders = [];
     state.transfers = [];
@@ -1132,7 +1162,18 @@ window.archiveCurrentWeek = async function(requireConfirmation = true) {
     
     await save('WEEK_ARCHIVED');
     if (requireConfirmation) {
-        alert(`✅ Archived ${archive.summary.orderCount} orders as "${weekLabel}". Fresh week started.`);
+        // Always download the archived week in BOTH formats
+        const safeLabel = weekLabel.replace(/[^\w-]+/g, '_');
+        downloadFile(`habesha_archive_${safeLabel}.docx`, generateDocxReport(archive));
+        const report = {
+            type: 'ARCHIVED_WEEKLY_REPORT',
+            weekLabel: archive.weekLabel,
+            exportDate: now(),
+            orders: archive.orders,
+            summary: archive.summary
+        };
+        downloadFile(`habesha_archive_${safeLabel}.json`, JSON.stringify(report, null, 2));
+        alert(`✅ Archived ${archive.summary.orderCount} orders as "${weekLabel}". Fresh week started (employee ranking kept).\n\n⬇️ Downloaded: DOCX + JSON.`);
         render('reports');
     }
 };
@@ -1515,24 +1556,19 @@ window.exportCurrentWeekReport = function() {
         }
     };
     
-    // Ask user for export format
-    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
-    
-    if (format) {
-        const docxContent = generateDocxReport(currentArchive);
-        downloadFile(`habesha_current_week_${weekLabel.replace(/\s+/g, '_')}.docx`, docxContent);
-        alert(`✅ Exported current week as DOCX: ${weekLabel}`);
-    } else {
-        const report = {
-            type: 'CURRENT_WEEKLY_REPORT',
-            weekLabel,
-            exportDate: now(),
-            orders: currentArchive.orders,
-            summary: currentArchive.summary
-        };
-        downloadFile(`habesha_current_week_${weekLabel.replace(/\s+/g, '_')}.json`, JSON.stringify(report, null, 2));
-        alert(`✅ Exported current week as JSON: ${weekLabel}`);
-    }
+    // Always download in BOTH formats (no format prompt)
+    const safeLabel = weekLabel.replace(/[^\w-]+/g, '_');
+    const docxContent = generateDocxReport(currentArchive);
+    downloadFile(`habesha_current_week_${safeLabel}.docx`, docxContent);
+    const report = {
+        type: 'CURRENT_WEEKLY_REPORT',
+        weekLabel,
+        exportDate: now(),
+        orders: currentArchive.orders,
+        summary: currentArchive.summary
+    };
+    downloadFile(`habesha_current_week_${safeLabel}.json`, JSON.stringify(report, null, 2));
+    alert(`✅ Exported current week "${weekLabel}" as DOCX + JSON.`);
 };
 
 async function save(action) {
@@ -1616,10 +1652,7 @@ function homeView() {
     const walkinOrders = state.orders.filter(o => o.customer === 'Walk-in Customer').length;
 
     let rankingHtml = '';
-    const ranks = state.employees.filter(e => e.role === 'employee').map(e => {
-        const empOrders = state.orders.filter(o => o.employeeId === e.id);
-        return { id: e.id, name: e.name, orders: empOrders.length, spent: empOrders.reduce((acc, o) => acc + o.total, 0) };
-    }).sort((a, b) => b.spent - a.spent || b.orders - a.orders); // Rank by amount spent (top spender = King)
+    const ranks = getRankings(); // all-time ranking (current week + every archived week)
 
     if (currentUser.role === 'employee') {
         const myIndex = ranks.findIndex(r => r.id === currentUser.id);
@@ -1636,7 +1669,7 @@ function homeView() {
         rankingHtml = `
             <div class="card wide">
                 <div class="title"><i class="fas fa-trophy"></i> Employee Ranking</div>
-                <div class="sub">Ranked by total amount spent — the top spender is crowned King</div>
+                <div class="sub">All-time ranking (current week + every archived week), ranked by total amount spent — the top spender is crowned King. Archiving a week does NOT reset it.</div>
                 <div class="list">
                     ${ranks.map((r, i) => `
                         <div class="item">
@@ -2171,8 +2204,12 @@ function hrView() {
                     </div>
                 </div>
                 <div class="row" style="margin-bottom: 8px; margin-top: 4px;">
-                    <button class="small success" id="markAllWorkBtn"><i class="fas fa-check-double"></i> Reset All (At Work &amp; 5 Coupons)</button>
+                    <button class="small primary" id="sweepAllBtn"><i class="fas fa-broom"></i> Sweep All Leftovers</button>
+                    <button class="small success" id="resetAllCouponsBtn"><i class="fas fa-check-double"></i> Reset All (5 Coupons)</button>
                     <button class="small danger" id="markAllLeaveBtn"><i class="fas fa-ban"></i> All On Leave</button>
+                </div>
+                <div class="row" style="margin-bottom: 8px;">
+                    <button class="small outline" id="grantAllCouponsBtn"><i class="fas fa-ticket-alt"></i> +1 Coupon to All At Work</button>
                 </div>
                 <div class="list" id="hrRosterList" style="max-height: 420px;">
                     ${emps.length ? hrRosterItemsHtml(emps.filter(e => employeeMatches(e, hrEmpSearchQuery))) : '<div class="hr-emp-card sub">No employees registered.</div>'}
@@ -2227,6 +2264,7 @@ function reportsView() {
     const cashRev = state.orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
     const couponRev = state.orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
     const walletRev = state.orders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
+    const ranks = getRankings(); // all-time employee ranking
 
     const isAdmin = currentUser.role === 'admin';
     const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
@@ -2277,13 +2315,31 @@ function reportsView() {
                     <select id="archiveWeekSelect" onchange="loadArchivedWeek(this.value)">
                         <option value="">-- Current Week --</option>
                         ${state.weeklyArchives.map((archive, idx) => `
-                            <option value="${idx}">${archive.weekLabel} (${archive.orderCount} orders)</option>
+                            <option value="${idx}">${archive.weekLabel} (${(archive.summary && archive.summary.orderCount) || (archive.orders ? archive.orders.length : 0)} orders)</option>
                         `).join('')}
                     </select>
                 </div>
                 ${state.weeklyArchives.length > 0 ? `
                 <button class="small outline" style="margin-top: 10px;" onclick="exportArchiveReport()"><i class="fas fa-download"></i> Export Selected Archive</button>
                 ` : ''}
+                <div class="sub" style="margin-top: 8px;"><i class="fas fa-info-circle"></i> Archive buttons download the report in <b>both DOCX and JSON</b> formats automatically.</div>
+            </div>
+
+            <div class="card wide">
+                <div class="title"><i class="fas fa-trophy"></i> Employee Ranking</div>
+                <div class="sub">All-time ranking (current week + every archived week). The top spender is crowned King — archiving a week does NOT reset it.</div>
+                <div class="list">
+                    ${ranks.length ? ranks.map((r, i) => `
+                        <div class="item">
+                            <span><b>#${i+1}${i === 0 ? ' <i class="fas fa-crown" style="color:#d4af37;" title="King"></i>' : ''} ${esc(r.name)}</b></span>
+                            <span class="pill"><b>${r.spent.toFixed(2)} Br</b> &nbsp;·&nbsp; ${r.orders} orders</span>
+                        </div>
+                    `).join('') : '<div class="item sub">No employees yet.</div>'}
+                </div>
+                <div class="row" style="margin-top: 10px;">
+                    <button class="small warn" onclick="refreshRanking()"><i class="fas fa-sync-alt"></i> Refresh Ranking</button>
+                    <button class="small primary" onclick="exportRankingReport()"><i class="fas fa-download"></i> Download Ranking (DOCX + JSON)</button>
+                </div>
             </div>
 
             <div class="card wide">
@@ -2367,6 +2423,87 @@ function profileView() {
 }
 
 // Global Window Helpers
+// ── CBE / Telebirr payment accounts ──────────────────────────────────────────
+// Admins (Cafe Admin / Super Admin) see input fields to set the café's
+// accounts; everyone else sees the saved numbers with a one-tap Copy button.
+const DEFAULT_PAYMENT_ACCOUNTS = {
+    cbeName: 'Evlogia cafe & Restaurant',
+    cbeNumber: '1000639156722',
+    telebirrName: 'Evlogia cafe & Restaurant Enterprise',
+    telebirrNumber: '0912792546'
+};
+
+function paymentAccounts() {
+    const pa = state.paymentAccounts || {};
+    return {
+        cbeName: pa.cbeName || DEFAULT_PAYMENT_ACCOUNTS.cbeName,
+        cbeNumber: pa.cbeNumber || DEFAULT_PAYMENT_ACCOUNTS.cbeNumber,
+        telebirrName: pa.telebirrName || DEFAULT_PAYMENT_ACCOUNTS.telebirrName,
+        telebirrNumber: pa.telebirrNumber || DEFAULT_PAYMENT_ACCOUNTS.telebirrNumber
+    };
+}
+
+function renderPaymentModal() {
+    const body = $('paymentModalBody');
+    if (!body) return;
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
+    const pa = paymentAccounts();
+
+    if (isAdmin) {
+        body.innerHTML = `
+            <p class="sub" style="margin-bottom: 12px;">Admin side: set the café's payment accounts below. These are what employees will see, with a one-tap Copy button.</p>
+            <div class="field" style="margin-bottom: 10px;">
+                <label><i class="fas fa-university" style="color: #6a1b9a;"></i> CBE — Account Name</label>
+                <input id="payCbeName" value="${esc(pa.cbeName)}" placeholder="e.g. Evlogia cafe & Restaurant">
+            </div>
+            <div class="field" style="margin-bottom: 10px;">
+                <label>CBE — Account Number</label>
+                <input id="payCbeNumber" value="${esc(pa.cbeNumber)}" placeholder="e.g. 1000639156722">
+            </div>
+            <div class="field" style="margin-bottom: 10px;">
+                <label><i class="fas fa-mobile-alt" style="color: #0088cc;"></i> Telebirr — Account Name</label>
+                <input id="payTelebirrName" value="${esc(pa.telebirrName)}" placeholder="e.g. Evlogia cafe & Restaurant Enterprise">
+            </div>
+            <div class="field" style="margin-bottom: 10px;">
+                <label>Telebirr — Number</label>
+                <input id="payTelebirrNumber" value="${esc(pa.telebirrNumber)}" placeholder="e.g. 0912792546">
+            </div>
+            <button class="success" style="width:100%;" id="savePaymentAccountsBtn"><i class="fas fa-save"></i> Save Accounts</button>`;
+        $('savePaymentAccountsBtn').onclick = savePaymentAccounts;
+    } else {
+        body.innerHTML = `
+            <p class="sub" style="margin-bottom: 16px;">Transfer cash via Telebirr or CBE, then present transaction details to the cashier.</p>
+            <div class="payment-card">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.9rem;"><i class="fas fa-university" style="color: #6a1b9a;"></i> Commercial Bank of Ethiopia</div>
+                    <div class="sub">Account Name: <b>${esc(pa.cbeName)}</b></div>
+                    <div class="account-num">${esc(pa.cbeNumber)}</div>
+                </div>
+                <button class="small outline" onclick="copyToClipboard('${esc(pa.cbeNumber)}', 'CBE Account Number')"><i class="fas fa-copy"></i> Copy</button>
+            </div>
+            <div class="payment-card">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.9rem;"><i class="fas fa-mobile-alt" style="color: #0088cc;"></i> Telebirr Mobile Pay</div>
+                    <div class="sub">Account Name: <b>${esc(pa.telebirrName)}</b></div>
+                    <div class="account-num">${esc(pa.telebirrNumber)}</div>
+                </div>
+                <button class="small outline" onclick="copyToClipboard('${esc(pa.telebirrNumber)}', 'Telebirr Number')"><i class="fas fa-copy"></i> Copy</button>
+            </div>`;
+    }
+}
+
+async function savePaymentAccounts() {
+    const cbeName = $('payCbeName').value.trim();
+    const cbeNumber = $('payCbeNumber').value.trim();
+    const telebirrName = $('payTelebirrName').value.trim();
+    const telebirrNumber = $('payTelebirrNumber').value.trim();
+    if (!cbeName || !cbeNumber || !telebirrName || !telebirrNumber) return alert('Please fill in both account names and numbers.');
+    state.paymentAccounts = { cbeName, cbeNumber, telebirrName, telebirrNumber };
+    await save('PAYMENT_ACCOUNTS_UPDATED');
+    alert('✅ Payment accounts saved. Employees now see these numbers with a Copy button.');
+    renderPaymentModal();
+}
+
 window.copyToClipboard = function(text, label) {
     const done = (ok) => {
         if (ok) alert(`✅ ${label} copied to clipboard: ${text}`);
@@ -2679,19 +2816,12 @@ window.exportDailyReport = function() {
     const range = getTodayRange();
     const orders = ordersInRange(state.orders, range.start, range.end);
     
-    // Ask user for export format
-    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
-    
-    if (format) {
-        const report = buildFinancialReport('Daily Report', range.start, range.end, orders);
-        const docxContent = generateFinancialDocxReport(report, 'Daily Report');
-        downloadFile(`habesha_daily_report_${now().slice(0, 10)}.docx`, docxContent);
-        alert('✅ Exported daily report as DOCX');
-    } else {
-        const report = buildFinancialReport('Daily Report', range.start, range.end, orders);
-        downloadFile(`habesha_daily_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
-        alert('✅ Exported daily report as JSON');
-    }
+    // Always download in BOTH formats (no format prompt)
+    const report = buildFinancialReport('Daily Report', range.start, range.end, orders);
+    const docxContent = generateFinancialDocxReport(report, 'Daily Report');
+    downloadFile(`habesha_daily_report_${now().slice(0, 10)}.docx`, docxContent);
+    downloadFile(`habesha_daily_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+    alert('✅ Exported daily report as DOCX + JSON');
 };
 
 window.exportDailyItemsReport = function() {
@@ -2711,19 +2841,12 @@ window.exportWeeklyReport = function() {
     const range = getWeekRange();
     const orders = ordersInRange(state.orders, range.start, range.end);
     
-    // Ask user for export format
-    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
-    
-    if (format) {
-        const report = buildFinancialReport('Weekly Report', range.start, range.end, orders);
-        const docxContent = generateFinancialDocxReport(report, 'Weekly Report');
-        downloadFile(`habesha_weekly_report_${now().slice(0, 10)}.docx`, docxContent);
-        alert('✅ Exported weekly report as DOCX');
-    } else {
-        const report = buildFinancialReport('Weekly Report', range.start, range.end, orders);
-        downloadFile(`habesha_weekly_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
-        alert('✅ Exported weekly report as JSON');
-    }
+    // Always download in BOTH formats (no format prompt)
+    const report = buildFinancialReport('Weekly Report', range.start, range.end, orders);
+    const docxContent = generateFinancialDocxReport(report, 'Weekly Report');
+    downloadFile(`habesha_weekly_report_${now().slice(0, 10)}.docx`, docxContent);
+    downloadFile(`habesha_weekly_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+    alert('✅ Exported weekly report as DOCX + JSON');
 };
 
 window.refreshWeeklyReport = async function() {
@@ -2742,22 +2865,19 @@ window.refreshWeeklyReport = async function() {
     }
     
     const totalRevenue = weekOrders.reduce((a, o) => a + o.total, 0);
-    const confirmMessage = `Export ${weekOrders.length} order(s) from this week (${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}) with total revenue of ${totalRevenue.toFixed(2)} Br and clear them from the live system?`;
+    const confirmMessage = `Download this week's report (DOCX + JSON) for ${weekOrders.length} order(s) (total revenue ${totalRevenue.toFixed(2)} Br) and clear them from the live system?\n\nThe employee ranking is NOT reset.`;
     
     if (!confirm(confirmMessage)) return;
 
     try {
-        // Ask for export format
-        const format = confirm('Click OK for DOCX format, Cancel for JSON format');
-        
-        if (format) {
-            const report = buildFinancialReport('Weekly Report (Archived)', range.start, range.end, weekOrders);
-            const docxContent = generateFinancialDocxReport(report, 'Weekly Report (Archived)');
-            downloadFile(`habesha_weekly_archive_${now().slice(0, 10)}.docx`, docxContent);
-        } else {
-            const report = buildFinancialReport('Weekly Report (Archived)', range.start, range.end, weekOrders);
-            downloadFile(`habesha_weekly_archive_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
-        }
+        // Always download in BOTH formats (no format prompt)
+        const report = buildFinancialReport('Weekly Report (Archived)', range.start, range.end, weekOrders);
+        const docxContent = generateFinancialDocxReport(report, 'Weekly Report (Archived)');
+        downloadFile(`habesha_weekly_archive_${now().slice(0, 10)}.docx`, docxContent);
+        downloadFile(`habesha_weekly_archive_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+
+        // Keep the all-time employee ranking: fold this week's totals in
+        accumulateRankingFromOrders(weekOrders);
 
         const weekIds = new Set(weekOrders.map(o => o.id));
         state.orders = state.orders.filter(o => !weekIds.has(o.id));
@@ -2768,7 +2888,7 @@ window.refreshWeeklyReport = async function() {
         
         await save('WEEKLY_REPORT_REFRESHED');
         
-        const successMessage = `✅ Exported and cleared ${weekOrders.length} order(s) with total revenue of ${totalRevenue.toFixed(2)} Br. Fresh week started.`;
+        const successMessage = `✅ Exported (DOCX + JSON) and cleared ${weekOrders.length} order(s) with total revenue of ${totalRevenue.toFixed(2)} Br. Fresh week started (employee ranking kept).`;
         alert(successMessage);
         
         // Refresh the current view
@@ -2865,40 +2985,29 @@ window.exportArchiveReport = function() {
     const archive = state.weeklyArchives[parseInt(select.value)];
     if (!archive) return alert('Archive not found.');
     
-    // Ask user for export format
-    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
-    
-    if (format) {
-        // Export as DOCX
-        const docxContent = generateDocxReport(archive);
-        downloadFile(`habesha_archive_${archive.weekLabel.replace(/\s+/g, '_')}.docx`, docxContent);
-        alert(`✅ Exported archive as DOCX: ${archive.weekLabel}`);
-    } else {
-        // Export as JSON
-        const report = {
-            type: 'ARCHIVED_WEEKLY_REPORT',
-            weekLabel: archive.weekLabel,
-            exportDate: now(),
-            orders: archive.orders,
-            summary: archive.summary
-        };
-        downloadFile(`habesha_archive_${archive.weekLabel.replace(/\s+/g, '_')}.json`, JSON.stringify(report, null, 2));
-        alert(`✅ Exported archive as JSON: ${archive.weekLabel}`);
-    }
+    // Always download in BOTH formats (no format prompt)
+    const safeLabel = archive.weekLabel.replace(/[^\w-]+/g, '_');
+    const docxContent = generateDocxReport(archive);
+    downloadFile(`habesha_archive_${safeLabel}.docx`, docxContent);
+    const report = {
+        type: 'ARCHIVED_WEEKLY_REPORT',
+        weekLabel: archive.weekLabel,
+        exportDate: now(),
+        orders: archive.orders,
+        summary: archive.summary
+    };
+    downloadFile(`habesha_archive_${safeLabel}.json`, JSON.stringify(report, null, 2));
+    alert(`✅ Exported archive "${archive.weekLabel}" as DOCX + JSON.`);
 };
 
 window.exportCouponReport = function() {
     const range = getWeekRange();
     const couponOrders = ordersInRange(state.orders.filter(o => o.payment.includes('Coupon')), range.start, range.end);
     
-    // Ask user for export format
-    const format = confirm('Click OK for DOCX format, Cancel for JSON format');
+    // Always download in BOTH formats (no format prompt)
+    const couponRevenue = couponOrders.reduce((a, o) => a + (o.couponPart || o.total), 0);
     
-    if (format) {
-        // Generate DOCX for coupon report
-        const couponRevenue = couponOrders.reduce((a, o) => a + (o.couponPart || o.total), 0);
-        
-        let html = `
+    let html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -2998,19 +3107,16 @@ window.exportCouponReport = function() {
 </html>`;
         
         downloadFile(`habesha_coupon_report_${now().slice(0, 10)}.docx`, html);
-        alert('✅ Exported coupon report as DOCX');
-    } else {
-        const report = {
-            title: "Weekly Coupon Usage Report",
-            periodStart: range.start.toISOString(),
-            periodEnd: range.end.toISOString(),
-            generatedAt: now(),
-            couponRevenue: couponOrders.reduce((a, o) => a + (o.couponPart || o.total), 0),
-            couponOrders
-        };
-        downloadFile(`habesha_coupon_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
-        alert('✅ Exported coupon report as JSON');
-    }
+    const report = {
+        title: "Weekly Coupon Usage Report",
+        periodStart: range.start.toISOString(),
+        periodEnd: range.end.toISOString(),
+        generatedAt: now(),
+        couponRevenue,
+        couponOrders
+    };
+    downloadFile(`habesha_coupon_report_${now().slice(0, 10)}.json`, JSON.stringify(report, null, 2));
+    alert('✅ Exported coupon report as DOCX + JSON');
 };
 
 window.refreshReportsDashboard = function() {
@@ -3020,6 +3126,86 @@ window.refreshReportsDashboard = function() {
         alert('✅ Dashboard refreshed successfully');
     }
 };
+
+// ── Employee Ranking: refresh + download (DOCX + JSON) ───────────────────────
+window.refreshRanking = function() {
+    render('reports');
+    alert('✅ Employee ranking refreshed (current week + all archived weeks).');
+};
+
+window.exportRankingReport = function() {
+    const ranks = getRankings();
+    if (!ranks.length) return alert('No employees to rank yet.');
+    
+    // Always download in BOTH formats
+    const exportDate = now();
+    const dateTag = exportDate.slice(0, 10);
+    downloadFile(`habesha_employee_ranking_${dateTag}.docx`, generateRankingDocxReport(ranks));
+    const report = {
+        type: 'EMPLOYEE_RANKING_REPORT',
+        exportDate,
+        note: 'All-time employee ranking (current week + every archived week). Top spender = King.',
+        rankings: ranks
+    };
+    downloadFile(`habesha_employee_ranking_${dateTag}.json`, JSON.stringify(report, null, 2));
+    alert('✅ Employee ranking downloaded as DOCX + JSON.');
+};
+
+function generateRankingDocxReport(ranks) {
+    const rows = ranks.map((r, i) => `
+                <tr>
+                    <td>${i + 1}${i === 0 ? ' 👑' : ''}</td>
+                    <td><b>${esc(r.name)}</b></td>
+                    <td>${r.spent.toFixed(2)} Br</td>
+                    <td>${r.orders}</td>
+                </tr>`).join('');
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Employee Ranking Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #8B4513; border-bottom: 2px solid #8B4513; padding-bottom: 10px; }
+        h2 { color: #657184; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+        td { border: 1px solid #dce2ea; padding: 10px; }
+        tr:nth-child(even) { background: #f8fbff; }
+        .summary { background: #f5f7fb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .summary-item { margin: 10px 0; font-size: 16px; }
+        .summary-item strong { color: #8B4513; }
+    </style>
+</head>
+<body>
+    <h1>👑 Habesha Cafe Employee Ranking</h1>
+    <div class="summary">
+        <h3>Report Summary</h3>
+        <div class="summary-item"><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+        <div class="summary-item"><strong>Scope:</strong> All-time ranking (current week + every archived week)</div>
+        <div class="summary-item"><strong>Employees ranked:</strong> ${ranks.length}</div>
+        <div class="summary-item"><strong>King 👑:</strong> ${ranks.length ? esc(ranks[0].name) : '-'} (${ranks.length ? ranks[0].spent.toFixed(2) : '0.00'} Br)</div>
+    </div>
+    <h2>Ranking (top spender first)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Employee</th>
+                <th>Total Spent</th>
+                <th>Total Orders</th>
+            </tr>
+        </thead>
+        <tbody>${rows}
+        </tbody>
+    </table>
+    <div style="margin-top: 50px; text-align: center; color: #657184; font-size: 12px;">
+        Generated by Habesha Cafe Management System
+    </div>
+</body>
+</html>`;
+}
 
 window.approveNightCoupon = async function(id) {
     const emp = state.employees.find(e => e.id === id);
@@ -3076,14 +3262,16 @@ window.grantRegularCoupon = async function(id) {
         emp.regularCents += COUPON_CENTS;
         syncCouponDisplay(emp);
         await save('REGULAR_COUPON_GRANTED');
-        alert(`✅ Granted 1 Regular Coupon to ${emp.name}! (+${COUPON_VAL} Br)`);
+        alert(`✅ Granted 1 Regular Coupon to ${emp.name}! (+${COUPON_VAL} Br)\n\nTotal coupon balance: ${(emp.regularCents / COUPON_CENTS).toFixed(2)} coupons`);
         render('hr');
     }
 };
 
 // ===== WEEKLY COUPON SWEEP (leftover coupons -> wallet via admin approval) =====
-// Weekly reset: clears the employee's remaining coupon balance and parks its exact
+// Weekly sweep: clears the employee's remaining coupon balance and parks its exact
 // value in couponSweepPendingCents so the Cafe Admin can deposit it into the wallet.
+// IMPORTANT: Use the button workflow: 1) Sweep All Leftovers 2) Reset All (5 Coupons)
+// Fresh coupons are only given when explicitly authorized by superadmin.
 window.resetWeeklyCoupons = async function(id) {
     const emp = state.employees.find(e => e.id === id);
     if (!emp) return;
@@ -3092,15 +3280,15 @@ window.resetWeeklyCoupons = async function(id) {
         return alert(`${emp.name} already has ${(emp.couponSweepPendingCents / BIRR_CENTS).toFixed(2)} Br waiting in Wallet Approvals.`);
     }
     const remainingCents = emp.regularCents + emp.nightCents;
-    if (remainingCents <= 0) return alert(`${emp.name} has no remaining coupon balance to sweep.`);
+    if (remainingCents <= 0) return alert(`${emp.name} has no remaining coupon balance to sweep. Their coupon balance is already at 0.`);
     const remainingBr = remainingCents / BIRR_CENTS;
-    if (!confirm(`Weekly coupon reset for ${emp.name}:\n\nRemaining balance of ${remainingBr.toFixed(2)} Br will be cleared from their coupons and sent to the Cafe Admin's Wallet Approvals to be deposited into their wallet.\n\nContinue?`)) return;
+    if (!confirm(`Sweep leftover coupons for ${emp.name}:\n\nRemaining balance of ${remainingBr.toFixed(2)} Br will be cleared from their coupons and sent to the Cafe Admin's Wallet Approvals to be deposited into their wallet. Their coupon balance will be set to 0.\n\nNote: After sweeping, use 'Reset All (5 Coupons)' or '+1 Regular Coupon' to grant fresh coupons.\n\nContinue?`)) return;
     emp.couponSweepPendingCents = remainingCents;
-    emp.regularCents = 0;
+    emp.regularCents = 0; // No automatic fresh coupons
     emp.nightCents = 0;
     syncCouponDisplay(emp);
     await save('WEEKLY_COUPON_RESET');
-    alert(`✅ Weekly coupons reset for ${emp.name}. ${remainingBr.toFixed(2)} Br is now waiting in Wallet Approvals.`);
+    alert(`✅ Swept ${remainingBr.toFixed(2)} Br from ${emp.name}'s coupons to Wallet Approvals. Their coupon balance is now 0.`);
     render(currentTab === 'hr' ? 'hr' : currentTab);
 };
 
@@ -3510,9 +3698,9 @@ function bindTabActions(tab) {
                 name,
                 role: 'employee',
                 status: 'At Work',
-                coupons: 5,
+                coupons: 0, // New employees start with 0 coupons - superadmin must grant them
                 nightCoupons: 0,
-                regularCents: 5 * COUPON_CENTS,
+                regularCents: 0,
                 nightCents: 0,
                 walletCents: 0,
                 walletDepositRequested: 0,
@@ -3525,14 +3713,13 @@ function bindTabActions(tab) {
             render('hr');
         };
 
-        $('markAllWorkBtn').onclick = async () => {
+        $('sweepAllBtn').onclick = async () => {
             state.employees.filter(e => e.role === 'employee').forEach(ensureCouponLedger);
-            // Only At Work employees are swept & reset. Employees On Leave are left untouched
-            // (their remaining coupons and status are reverted/kept as they are).
+            // Sweep leftover coupons from all At Work employees to Wallet Approvals
             const targets = state.employees.filter(e => e.role === 'employee' && e.status === 'At Work');
             const skipped = state.employees.filter(e => e.role === 'employee' && e.status !== 'At Work');
             const totalLeftoverCents = targets.reduce((a, e) => a + Math.max(0, e.regularCents + e.nightCents), 0);
-            const msg = `Weekly reset:\n\n• ${targets.length} employee(s) AT WORK: leftover coupons (${(totalLeftoverCents / BIRR_CENTS).toFixed(2)} Br total) will be sent to Wallet Approvals, then they receive fresh 5 coupons.\n• ${skipped.length} employee(s) ON LEAVE: left untouched.\n\nContinue?`;
+            const msg = `Sweep all leftover coupons:\n\n• ${targets.length} employee(s) AT WORK: leftover coupons (${(totalLeftoverCents / BIRR_CENTS).toFixed(2)} Br total) will be sent to Wallet Approvals. Coupon balances will be set to 0.\n• ${skipped.length} employee(s) ON LEAVE: left untouched.\n\nNote: This only sweeps leftovers - no fresh coupons are given. Use 'Reset All (5 Coupons)' button after sweeping to give fresh coupons.\n\nContinue?`;
             if (!confirm(msg)) return;
             let sweptCount = 0;
             targets.forEach(e => {
@@ -3541,15 +3728,49 @@ function bindTabActions(tab) {
                     e.couponSweepPendingCents = (e.couponSweepPendingCents || 0) + leftover;
                     sweptCount++;
                 }
+                // Set coupon balance to 0 after sweeping
+                e.regularCents = 0;
+                e.nightCents = 0;
+                syncCouponDisplay(e);
+            });
+            await save('ALL_EMPLOYEES_SWEEP');
+            alert(sweptCount
+                ? `✅ Swept leftovers from ${sweptCount} employee(s) (${(totalLeftoverCents / BIRR_CENTS).toFixed(2)} Br) to Wallet Approvals. All coupon balances set to 0.`
+                : `✅ No leftover coupons to sweep. All coupon balances already at 0.`);
+            render('hr');
+        };
+
+        $('resetAllCouponsBtn').onclick = async () => {
+            state.employees.filter(e => e.role === 'employee').forEach(ensureCouponLedger);
+            // Give 5 fresh coupons to all At Work employees
+            const targets = state.employees.filter(e => e.role === 'employee' && e.status === 'At Work');
+            const skipped = state.employees.filter(e => e.role === 'employee' && e.status !== 'At Work');
+            const msg = `Reset all coupons:\n\n• ${targets.length} employee(s) AT WORK: will receive 5 fresh coupons each (${COUPON_VAL} Br per coupon = ${(5 * COUPON_VAL).toFixed(2)} Br total per employee).\n• ${skipped.length} employee(s) ON LEAVE: left untouched.\n\nNote: Use 'Sweep All Leftovers' button first if you want to clear existing coupon balances before giving fresh coupons.\n\nContinue?`;
+            if (!confirm(msg)) return;
+            targets.forEach(e => {
                 e.regularCents = 5 * COUPON_CENTS;
                 e.nightCents = 0;
                 syncCouponDisplay(e);
                 e.nightRequested = false;
             });
-            await save('ALL_EMPLOYEES_RESET_WORK');
-            alert(sweptCount
-                ? `✅ Reset ${targets.length} employee(s) to At Work & 5 coupons. Leftover coupons from ${sweptCount} employee(s) (${(totalLeftoverCents / BIRR_CENTS).toFixed(2)} Br) are waiting in Wallet Approvals.`
-                : `✅ Reset ${targets.length} employee(s) to At Work & 5 coupons. No leftover coupons to sweep.`);
+            await save('ALL_EMPLOYEES_RESET_COUPONS');
+            alert(`✅ Reset ${targets.length} employee(s) to 5 fresh coupons each. Total value granted: ${(targets.length * 5 * COUPON_VAL).toFixed(2)} Br.`);
+            render('hr');
+        };
+
+        $('grantAllCouponsBtn').onclick = async () => {
+            state.employees.filter(e => e.role === 'employee').forEach(ensureCouponLedger);
+            // Give 1 coupon to all At Work employees
+            const targets = state.employees.filter(e => e.role === 'employee' && e.status === 'At Work');
+            const skipped = state.employees.filter(e => e.role === 'employee' && e.status !== 'At Work');
+            const msg = `Grant 1 coupon to all:\n\n• ${targets.length} employee(s) AT WORK: will receive 1 coupon each (${COUPON_VAL} Br per employee).\n• ${skipped.length} employee(s) ON LEAVE: left untouched.\n\nContinue?`;
+            if (!confirm(msg)) return;
+            targets.forEach(e => {
+                e.regularCents += COUPON_CENTS;
+                syncCouponDisplay(e);
+            });
+            await save('ALL_EMPLOYEES_GRANT_ONE_COUPON');
+            alert(`✅ Granted 1 coupon to ${targets.length} employee(s). Total value granted: ${(targets.length * COUPON_VAL).toFixed(2)} Br.`);
             render('hr');
         };
 
@@ -3921,7 +4142,7 @@ $('logoutBtn').onclick = () => {
 };
 
 $('backupBtn').onclick = () => downloadFile(`habesha_full_backup_${now().slice(0, 10)}.json`, JSON.stringify(state, null, 2));
-$('showPaymentDetailsBtn').onclick = () => $('paymentModal').classList.remove('hidden');
+$('showPaymentDetailsBtn').onclick = () => { renderPaymentModal(); $('paymentModal').classList.remove('hidden'); };
 $('closePaymentModalBtn').onclick = () => $('paymentModal').classList.add('hidden');
 $('remainderModalCancelBtn').onclick = () => closeRemainderModal(null);
 

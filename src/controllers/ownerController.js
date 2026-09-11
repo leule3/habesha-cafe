@@ -82,7 +82,14 @@ function emptyState(cafeId) {
         audit: [],
         dailyQuote: '',
         lastWeeklyRefresh: null,
-        weeklyArchives: []
+        weeklyArchives: [],
+        ranking: [], // all-time employee ranking totals (survives week archives)
+        paymentAccounts: {
+            cbeName: 'Evlogia cafe & Restaurant',
+            cbeNumber: '1000639156722',
+            telebirrName: 'Evlogia cafe & Restaurant Enterprise',
+            telebirrNumber: '0912792546'
+        }
     };
 }
 
