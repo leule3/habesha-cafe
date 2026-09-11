@@ -5,7 +5,4 @@ services:
     buildCommand: npm install
     startCommand: node src/server.js
     envVars:
-      - key: MONGO_URI
-        value: mongodb+srv://haylayleule3_db_user:1xfvF58e6Hi1sT0r@cluster0.smk8jxe.mongodb.net/?appName=Cluster0
-      - key: PORT
         value: 3000
