@@ -60,6 +60,12 @@
         .sub { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
         .notice { background: rgba(160, 82, 45, 0.08); border: 1px dashed var(--primary); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.5; }
 
+        /* Confirmation banner shown after every action (account created, café deleted, …) */
+        .notice-bar { display: flex; align-items: center; gap: 10px; background: #eaf6ef; border: 1px solid var(--success); color: #14633a; border-radius: 10px; padding: 12px 14px; font-size: 0.9rem; line-height: 1.55; margin-bottom: 16px; word-break: break-word; white-space: pre-line; }
+        .notice-bar.error { background: #fdeeec; border-color: var(--danger); color: var(--danger); }
+        .notice-bar.hidden { display: none !important; }
+        .notice-bar b { word-break: break-all; }
+
         .field { display: flex; flex-direction: column; gap: 4px; }
         .field label { font-size: 0.78rem; font-weight: 700; color: var(--muted); }
         input, select { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; width: 100%; background: #fff; color: var(--ink); }
@@ -134,6 +140,9 @@
             <button id="refreshBtn" class="btn small" style="margin-left: auto;"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
 
+        <!-- Confirmation banner (account created / café deleted / errors …) -->
+        <div id="noticeBar" class="notice-bar hidden" role="status"></div>
+
         <div class="grid">
             <div class="card">
                 <div class="title"><i class="fas fa-plus-circle"></i> Create New Café</div>
@@ -175,6 +184,86 @@ async function api(path, opts = {}) {
 }
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ── Confirmations (banner) ───────────────────────────────────────────────────
+// Every action shows a confirmation banner above the café list. Errors are
+// red, successes green. Pass { sticky: true } to keep the banner visible
+// (used for sign-in details you need to copy) and { copy: '...' } to add a
+// one-tap Copy button.
+let noticeTimer = null;
+function notice(msg, opts) {
+    const bar = $('noticeBar');
+    if (!bar) return;
+    opts = opts || {};
+    const isError = String(msg).startsWith('❌');
+    let html = `<span style="flex:1;">${esc(msg)}</span>`;
+    if (opts.copy) html += `<button id="noticeCopyBtn" class="small btn" style="white-space:nowrap;">📋 Copy</button>`;
+    html += `<button id="noticeDismiss" title="Dismiss" style="background:transparent; color:inherit; font-weight:900; padding:2px 8px;">✕</button>`;
+    bar.innerHTML = html;
+    bar.classList.remove('hidden');
+    bar.classList.toggle('error', isError);
+    if (opts.copy) $('noticeCopyBtn').onclick = () => copyTextOwner(opts.copy);
+    $('noticeDismiss').onclick = dismissNotice;
+    clearTimeout(noticeTimer);
+    if (!opts.sticky) noticeTimer = setTimeout(dismissNotice, 12000);
+}
+
+function dismissNotice() {
+    clearTimeout(noticeTimer);
+    const bar = $('noticeBar');
+    if (bar) bar.classList.add('hidden');
+}
+
+async function copyTextOwner(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (e) {
+        // Plain-http fallback (clipboard API needs a secure context)
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+    }
+}
+
+// ── Live update ──────────────────────────────────────────────────────────────
+// Re-fetches the café list every 5 seconds while the dashboard is open, so
+// changes made on café devices (new employees, orders, claimed access keys,
+// sign-ins) appear here without a manual refresh. Paused while you are
+// typing in one of the forms or have text selected, so nothing you are
+// working on is ever wiped mid-edit.
+let liveUpdateTimer = null;
+
+function ownerFormsInUse() {
+    const el = document.activeElement;
+    const typing = el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA');
+    const inOwnerForm = typing && (el.id === 'newCafeLabel' || String(el.id || '').startsWith('newStaff'));
+    let selecting = false;
+    try { selecting = !window.getSelection().isCollapsed; } catch (e) { /* older browsers */ }
+    return inOwnerForm || selecting;
+}
+
+function startLiveUpdate() {
+    stopLiveUpdate();
+    liveUpdateTimer = setInterval(async () => {
+        if (document.hidden || ownerFormsInUse()) return;
+        if (!localStorage.getItem(TOKEN_KEY)) return;
+        const dash = $('dashboard');
+        if (!dash || dash.classList.contains('hidden')) return;
+        try { await loadCafes(); } catch (e) { /* stay quiet between polls */ }
+    }, 5000);
+}
+
+function stopLiveUpdate() {
+    if (liveUpdateTimer) { clearInterval(liveUpdateTimer); liveUpdateTimer = null; }
+}
 
 function cafeName(c) { return c.label || c.cafeId; }
 
@@ -224,6 +313,7 @@ async function initAuth() {
             $('ownerBadge').textContent = '👑 ' + (me.owner.name || me.owner.username);
             await loadCafes();
             showDashboard();
+            startLiveUpdate();
         } catch (e) { /* showLogin already handled by api() */ }
     }
 }
@@ -259,14 +349,17 @@ $('loginBtn').onclick = async () => {
         $('loginPass').value = '';
         await loadCafes();
         showDashboard();
+        startLiveUpdate();
     } catch (e) {
         $('loginMsg').textContent = e.message;
     }
 };
 
 $('logoutBtn').onclick = async () => {
+    stopLiveUpdate();
     try { await api('/logout', { method: 'POST' }); } catch (e) { /* ignore */ }
     localStorage.removeItem(TOKEN_KEY);
+    dismissNotice();
     await initAuth();
 };
 
@@ -282,8 +375,21 @@ function renderCafes(cafes) {
         el.innerHTML = `<div class="empty">No cafés yet. Create your first café above, then open its link on that café's computer and come back here to add the Admin &amp; HR accounts.</div>`;
         return;
     }
+    // Live refreshes re-render this list every few seconds — preserve anything
+    // typed into the new-café / new-staff forms and restore focus afterwards,
+    // so a background update never wipes what you are typing.
+    const saved = {};
+    el.querySelectorAll('input, select').forEach(inp => { if (inp.id) saved[inp.id] = inp.value; });
+    const activeId = document.activeElement ? document.activeElement.id : '';
     el.innerHTML = `<div class="title"><i class="fas fa-store-alt"></i> All Cafés</div>` +
         cafes.map(c => cafeCard(c)).join('');
+    el.querySelectorAll('input, select').forEach(inp => {
+        if (Object.prototype.hasOwnProperty.call(saved, inp.id)) inp.value = saved[inp.id];
+    });
+    if (activeId) {
+        const restore = document.getElementById(activeId);
+        if (restore && (restore.tagName === 'INPUT' || restore.tagName === 'SELECT')) restore.focus();
+    }
 }
 
 function cafeCard(c) {
@@ -361,7 +467,19 @@ async function createStaff(cafeId) {
     if (password.length < 3) return notice('Password must be at least 3 characters.');
     try {
         await api('/cafes/' + encodeURIComponent(cafeId) + '/staff', { method: 'POST', body: { name, username, role, password } });
-        notice('✅ ' + (role === 'admin' ? 'Cafe Admin' : 'HR Manager') + ' "' + username + '" created for this café.');
+        const roleLabel = role === 'admin' ? 'Cafe Admin' : 'HR Manager';
+        notice(
+            '✅ ' + roleLabel + ' account created for this café!\n' +
+            'Name: ' + name + '\nUsername: @' + username + '\nPassword: ' + password + '\n' +
+            'Share these sign-in details with the staff member so they can sign into the café app.',
+            { sticky: true, copy: 'Role: ' + roleLabel + '\nName: ' + name + '\nUsername: ' + username + '\nPassword: ' + password }
+        );
+        // Clear this café's creation form (renderCafes preserves typed values,
+        // so clear explicitly before the refresh).
+        ['newStaffName_', 'newStaffUser_', 'newStaffPass_'].forEach(p => {
+            const inp = $(p + cafeId);
+            if (inp) inp.value = '';
+        });
         await loadCafes();
     } catch (e) { notice('❌ ' + e.message); }
 }
@@ -403,12 +521,10 @@ $('newCafeBtn').onclick = async () => {
         const origin = data.origin || window.location.origin;
         const link = origin + '/index.html?cafe=' + encodeURIComponent(c.cafeId) + (c.accessKey ? '&key=' + encodeURIComponent(c.accessKey) : '');
         const note = c.accessKey
-            ? ''
+            ? 'The café link was copied to your clipboard.'
             : '\n\n⚠️ The access key is claimed automatically the first time this café link is opened on the café\'s own device. Open the link first, then create its Admin/HR accounts.';
-        notice('✅ Café "' + cafeName(c) + '" created (id ' + c.cafeId + ').' + note);
-        try {
-            await navigator.clipboard.writeText(link);
-        } catch (e) { /* clipboard may be unavailable */ }
+        notice('✅ Café "' + cafeName(c) + '" created (id ' + c.cafeId + ').' + note, { sticky: true, copy: link });
+        await copyTextOwner(link);
         $('newCafeLabel').value = '';
         await loadCafes();
     } catch (e) { notice('❌ ' + e.message); }

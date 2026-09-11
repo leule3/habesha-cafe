@@ -2442,12 +2442,14 @@ function paymentAccounts() {
 function renderPaymentModal() {
     const body = $('paymentModalBody');
     if (!body) return;
-    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
+    // Only the Cafe Admin gets the account input fields. Everyone else
+    // (Super Admin, HR, employees) sees the saved numbers with a Copy button.
+    const isAdmin = currentUser && currentUser.role === 'admin';
     const pa = paymentAccounts();
 
     if (isAdmin) {
         body.innerHTML = `
-            <p class="sub" style="margin-bottom: 12px;">Admin side: set the café's payment accounts below. These are what employees will see, with a one-tap Copy button.</p>
+            <p class="sub" style="margin-bottom: 12px;">Cafe Admin side: set the café's payment accounts below. These are what employees will see, with a one-tap Copy button.</p>
             <div class="field" style="margin-bottom: 10px;">
                 <label><i class="fas fa-university" style="color: #6a1b9a;"></i> CBE — Account Name</label>
                 <input id="payCbeName" value="${esc(pa.cbeName)}" placeholder="e.g. Evlogia cafe & Restaurant">
