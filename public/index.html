@@ -979,7 +979,7 @@ function hrRosterItemsHtml(emps) {
                     ${e.status === 'At Work' ? 'Set Leave' : 'Set Work'}
                 </button>
                 <button class="small info" onclick="openEditEmployeeModal('${e.id}')"><i class="fas fa-user-edit"></i> Edit Profile</button>
-                ${currentUser.role === 'superadmin' ? `
+                ${isSuperAdmin() ? `
                 <button class="small danger" onclick="deleteEmployee('${e.id}')"><i class="fas fa-trash"></i> Delete</button>
                 ` : ''}
             </div>
@@ -1052,6 +1052,11 @@ async function initialize() {
             if (typeof e.couponTransferRequested !== 'number') { e.couponTransferRequested = 0; migrated = true; }
             if (typeof e.couponTransferToId !== 'string') { e.couponTransferToId = null; migrated = true; }
         });
+        // Self-heal: make sure the Super Admin account always keeps its role, even
+        // if it was accidentally changed elsewhere (e.g. via the Owner Portal
+        // staff editor). Without it, the HR tab and the employee Delete button vanish.
+        const su = state.employees.find(e => String(e.username || '').trim().toLowerCase() === 'superadmin');
+        if (su && String(su.role || '').trim().toLowerCase() !== 'superadmin') { su.role = 'superadmin'; migrated = true; }
         ensureWalkinMenu();
         ensureMenuSortOrder();
         if (!state.dailyQuote) { state.dailyQuote = ''; migrated = true; }
@@ -1577,6 +1582,17 @@ function roleName(r) {
     return { superadmin: 'Super Admin', admin: 'Cafe Admin', employee: 'Employee', hr: 'HR Manager' }[r] || r;
 }
 
+// True only for the Super Admin account. The seeded 'superadmin' username always
+// counts, even if its stored role string was accidentally changed somewhere
+// (e.g. 'admin' via the Owner Portal staff editor) — so Super Admin powers like
+// deleting employees can never silently disappear again.
+function isSuperAdmin(user) {
+    const u = user || currentUser;
+    if (!u) return false;
+    return String(u.role || '').trim().toLowerCase() === 'superadmin'
+        || String(u.username || '').trim().toLowerCase() === 'superadmin';
+}
+
 // Role Permissions
 function can(r, p) {
     const m = {
@@ -1698,7 +1714,7 @@ function homeView() {
                     <div class="stat"><span>Cash Revenue</span><b>${cashRev.toFixed(2)} Br</b></div>
                     <div class="stat"><span>Coupon Revenue</span><b>${couponRev.toFixed(2)} Br</b></div>
                     <div class="stat"><span>Total Revenue</span><b>${rev.toFixed(2)} Br</b></div>
-                    ` : currentUser.role === 'superadmin' || currentUser.role === 'hr' ? `
+                    ` : isSuperAdmin() || currentUser.role === 'hr' ? `
                     <div class="stat"><span>Total Orders</span><b>${state.orders.length}</b></div>
                     ` : ''}
                     <div class="stat"><span>Pending Orders</span><b>${open}</b></div>
@@ -2179,7 +2195,7 @@ function hrView() {
         <div class="grid">
             <div class="card wide sync-box">
                 <div class="title"><i class="fas fa-id-badge"></i> HR Register &amp; Coupon Management</div>
-                <div class="sub">Only Super Admin / HR can grant coupons and approve night bonus requests. ${currentUser.role === 'superadmin' ? 'Super Admin can also delete employees.' : ''}</div>
+                <div class="sub">Only Super Admin / HR can grant coupons and approve night bonus requests. ${isSuperAdmin() ? 'Super Admin can also delete employees.' : ''}</div>
             </div>
 
             <div class="card">
@@ -2221,7 +2237,7 @@ function syncView() {
                 <div class="title"><i class="fas fa-usb"></i> USB Data Package Exchange</div>
                 <div class="notice">Export/Import structured JSON packages using a USB flash drive between disconnected HR and Cafe Bureau devices. Full backup restores all balances exactly.</div>
                 <div class="row" style="margin-top: 10px;">
-                    ${currentUser.role === 'superadmin' || currentUser.role === 'hr' ? `
+                    ${isSuperAdmin() || currentUser.role === 'hr' ? `
                     <button id="exportHrPkgBtn" class="primary"><i class="fas fa-file-export"></i> Export HR Package (Employees)</button>
                     <button id="importCafePkgBtn" class="success"><i class="fas fa-file-import"></i> Import Cafe Package (Coupon Orders)</button>
                     ` : currentUser.role === 'admin' ? `
@@ -2263,7 +2279,7 @@ function reportsView() {
     const ranks = getRankings(); // all-time employee ranking
 
     const isAdmin = currentUser.role === 'admin';
-    const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
+    const isSuper = isSuperAdmin() || currentUser.role === 'hr';
 
     // Super Admin is restricted to coupon-usage reports: only coupon transactions
     // appear in the detailed daily order history (no cash / wallet data).
@@ -2644,7 +2660,7 @@ window.toggleWorkStatus = async function(id) {
 };
 
 window.deleteEmployee = async function(id) {
-    if (currentUser.role !== 'superadmin') return alert('Only Super Admin can delete employees.');
+    if (!isSuperAdmin()) return alert('Only Super Admin can delete employees.');
     
     const emp = state.employees.find(e => e.id === id);
     if (!emp) return alert('Employee not found.');
@@ -2824,7 +2840,7 @@ window.exportDailyReport = function() {
 
 window.exportDailyItemsReport = function() {
     const isAdmin = currentUser.role === 'admin';
-    const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
+    const isSuper = isSuperAdmin() || currentUser.role === 'hr';
     if (!isAdmin && !isSuper) return alert('Only Cafe Admin / Super Admin can export this report.');
     // Super Admin sees coupon orders only — the export matches what is shown on screen.
     const orders = isSuper ? state.orders.filter(o => o.payment.includes('Coupon')) : state.orders;
@@ -2906,7 +2922,7 @@ window.loadArchivedWeek = function(archiveIndex) {
     const archive = state.weeklyArchives[parseInt(archiveIndex)];
     if (!archive) return alert('Archive not found.');
     
-    const isSuper = currentUser.role === 'superadmin' || currentUser.role === 'hr';
+    const isSuper = isSuperAdmin() || currentUser.role === 'hr';
     // Super Admin / HR are restricted to coupon-usage reports: only coupon transactions
     // from the archived week are shown (no cash / wallet / total revenue data).
     const archivedOrders = isSuper ? archive.orders.filter(o => o.payment.includes('Coupon')) : archive.orders;
@@ -4057,7 +4073,7 @@ async function login() {
     $('loginView').classList.add('hidden');
     $('app').classList.remove('hidden');
     $('roleBadge').textContent = roleName(currentUser.role);
-    $('resetDbBtn').classList.toggle('hidden', currentUser.role !== 'admin' && currentUser.role !== 'superadmin');
+    $('resetDbBtn').classList.toggle('hidden', currentUser.role !== 'admin' && !isSuperAdmin());
 
     render('home');
 }
