@@ -4247,26 +4247,39 @@ $('doSignupBtn').onclick = async () => {
 };
 */
 
+// ── Reset: zeroes ranking + employee balances and clears order history. ──────
+// Employees and menu items are KEPT — only the numbers and history are wiped.
 $('resetDbBtn').onclick = async () => {
-    if (!confirm('🚨 WARNING: This will permanently wipe ALL employees, menu items, orders, and reports. Are you absolutely sure?')) return;
-    if (prompt('Type "RESET" to confirm wipe:') !== 'RESET') return alert('Reset cancelled.');
+    if (!confirm('🚨 This will reset:\n- Employee ranking → zero\n- All employee balances (coupons, night coupons, wallet) → zero\n- Current order history (archived weekly reports are KEPT)\n\nEmployees, menu items and weekly archives are KEPT. Continue?')) return;
+    if (prompt('Type "RESET" to confirm:') !== 'RESET') return alert('Reset cancelled.');
     
-    state = seed();
-    state.siteId = tenantId(); // keep café site id in sync with its tenant
-    const defs = [
-        ['superadmin', 'Super Admin', 'superadmin'],
-        ['admin', 'Cafe Admin', 'admin']
-    ];
-    for (const [u, n, r] of defs) {
-        const pw = await makePw('admin123');
-        state.employees.push({
-            id: genId(), username: u, name: n, role: r, status: 'At Work',
-            coupons: 0, nightCoupons: 0, regularCents: 0, nightCents: 0, 
-            walletCents: 0, walletDepositRequested: 0, nightRequested: false, pw
-        });
-    }
+    // Employee ranking → zero (orders are wiped below, so no live totals remain)
+    state.ranking = [];
+    state.rankingResetAt = now();
+    
+    // Employee balances + pending requests → zero (employees are NOT deleted)
+    state.employees.forEach(e => {
+        e.coupons = 0;
+        e.nightCoupons = 0;
+        e.regularCents = 0;
+        e.nightCents = 0;
+        e.walletCents = 0;
+        e.walletDepositRequested = 0;
+        if (typeof e.couponTransferRequested !== 'undefined') e.couponTransferRequested = 0;
+        if (typeof e.couponTransferToId !== 'undefined') e.couponTransferToId = null;
+        if (typeof e.nightRequested !== 'undefined') e.nightRequested = false;
+    });
+    
+    // Order history → cleared (current orders + coupon transfers only;
+    // archived weekly reports are KEPT)
+    state.orders = [];
+    state.transfers = [];
+    state.lastWeeklyRefresh = now();
+    
+    state.audit.push({ id: genId(), at: now(), actor: currentUser?.username || 'SYSTEM', action: 'SYSTEM_RESET' });
+    
     await putState();
-    alert('Database has been completely reset.');
+    alert('✅ Reset complete: ranking and balances are zero, current orders cleared.\nEmployees, menu items and weekly archives were kept.');
     location.reload();
 };
 
