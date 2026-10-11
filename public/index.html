@@ -1063,6 +1063,7 @@ async function initialize() {
         if (!state.lastWeeklyRefresh) { state.lastWeeklyRefresh = null; }
         if (!state.weeklyArchives) { state.weeklyArchives = []; migrated = true; }
         if (!Array.isArray(state.ranking)) { state.ranking = []; migrated = true; }
+        if (typeof state.rankingResetAt === 'undefined') { state.rankingResetAt = null; migrated = true; }
         if (!state.paymentAccounts) {
             state.paymentAccounts = {
                 cbeName: 'Evlogia cafe & Restaurant',
@@ -1091,12 +1092,20 @@ function getWeekNumber(date) {
 // ── Employee ranking (persists across week archives) ─────────────────────────
 // Cumulative totals from every archived / cleared week live in state.ranking.
 // The current week's live orders are added on top, so archiving a week and
-// starting fresh never resets the ranking.
+// starting fresh never resets the ranking. A manual "Reset Ranking" downloads
+// the existing ranking first, then zeroes state.ranking and stamps
+// state.rankingResetAt so live orders placed BEFORE the reset are not
+// double-counted into the fresh ranking.
+function rankingOrderCutoff() {
+    return state.rankingResetAt ? new Date(state.rankingResetAt).getTime() : 0;
+}
+
 function getRankings() {
     const totals = Array.isArray(state.ranking) ? state.ranking : [];
+    const cutoff = rankingOrderCutoff();
     return state.employees.filter(e => e.role === 'employee').map(e => {
         const saved = totals.find(r => r.employeeId === e.id) || { spent: 0, orders: 0 };
-        const empOrders = state.orders.filter(o => o.employeeId === e.id);
+        const empOrders = state.orders.filter(o => o.employeeId === e.id && new Date(o.at).getTime() >= cutoff);
         return {
             id: e.id,
             name: e.name,
@@ -1108,8 +1117,9 @@ function getRankings() {
 
 function accumulateRankingFromOrders(orders) {
     if (!Array.isArray(state.ranking)) state.ranking = [];
+    const cutoff = rankingOrderCutoff();
     state.employees.filter(e => e.role === 'employee').forEach(e => {
-        const empOrders = orders.filter(o => o.employeeId === e.id);
+        const empOrders = orders.filter(o => o.employeeId === e.id && new Date(o.at).getTime() >= cutoff);
         if (!empOrders.length) return;
         let entry = state.ranking.find(r => r.employeeId === e.id);
         if (!entry) { entry = { employeeId: e.id, spent: 0, orders: 0 }; state.ranking.push(entry); }
@@ -2349,7 +2359,7 @@ function reportsView() {
                     `).join('') : '<div class="item sub">No employees yet.</div>'}
                 </div>
                 <div class="row" style="margin-top: 10px;">
-                    <button class="small warn" onclick="refreshRanking()"><i class="fas fa-sync-alt"></i> Refresh Ranking</button>
+                    <button class="small warn" onclick="resetRanking()"><i class="fas fa-history"></i> Reset Ranking (saves existing first)</button>
                     <button class="small primary" onclick="exportRankingReport()"><i class="fas fa-download"></i> Download Ranking (DOCX + JSON)</button>
                 </div>
             </div>
@@ -2362,6 +2372,7 @@ function reportsView() {
                     <button class="small primary" onclick="exportDailyItemsReport()"><i class="fas fa-utensils"></i> Export Daily Items (DOCX)</button>
                     <button class="small primary" onclick="exportWeeklyReport()"><i class="fas fa-calendar-week"></i> Export Weekly (DOCX/JSON)</button>
                     <button class="small primary" onclick="exportCurrentWeekReport()"><i class="fas fa-calendar-week"></i> Export Current Week (DOCX/JSON)</button>
+                    <button class="small primary" onclick="exportMenuReport()"><i class="fas fa-book-open"></i> Export Menu Items (DOCX/JSON)</button>
                     <button class="small outline" onclick="exportCouponReport()"><i class="fas fa-ticket-alt"></i> Export Coupon Report (DOCX/JSON)</button>
                     <button class="small warn" onclick="refreshReportsDashboard()"><i class="fas fa-sync-alt"></i> Refresh Dashboard</button>
                 </div>
@@ -2665,18 +2676,11 @@ window.deleteEmployee = async function(id) {
     const emp = state.employees.find(e => e.id === id);
     if (!emp) return alert('Employee not found.');
     
-    // Check if employee has any orders
-    const empOrders = state.orders.filter(o => o.employeeId === id);
-    if (empOrders.length > 0) {
-        return alert(`Cannot delete ${emp.name}. They have ${empOrders.length} order(s) in the system. Please handle their orders first.`);
-    }
-    
-    // Check if employee has any remaining balance
+    // Warn about balances (if any) but never block deletion — orders stay in history.
     const totalWorth = getTotalWorth(emp);
     const walletBalance = (emp.walletCents || 0) / BIRR_CENTS;
     if (totalWorth > 0 || walletBalance > 0) {
-        const confirmMsg = `${emp.name} has:\n- ${totalWorth.toFixed(2)} Br in coupons\n- ${walletBalance.toFixed(2)} Br in wallet\n\nAre you sure you want to delete this employee? All balances will be lost.`;
-        if (!confirm(confirmMsg)) return;
+        if (!confirm(`${emp.name} has:\n- ${totalWorth.toFixed(2)} Br in coupons\n- ${walletBalance.toFixed(2)} Br in wallet\n\nAre you sure you want to delete this employee? All balances will be lost.`)) return;
     } else {
         if (!confirm(`Are you sure you want to delete ${emp.name}?`)) return;
     }
@@ -3133,6 +3137,96 @@ window.exportCouponReport = function() {
     alert('✅ Exported coupon report as DOCX + JSON');
 };
 
+// ── Menu items export (DOCX + JSON) ──────────────────────────────────────────
+window.exportMenuReport = function() {
+    const menu = Array.isArray(state.menu) ? state.menu : [];
+    const walkin = Array.isArray(state.walkinMenu) ? state.walkinMenu : [];
+    if (!menu.length && !walkin.length) return alert('No menu items to export.');
+
+    const exportDate = now();
+    const dateTag = exportDate.slice(0, 10);
+    downloadFile(`habesha_menu_items_${dateTag}.docx`, generateMenuDocxReport(menu, walkin));
+    const report = {
+        type: 'MENU_ITEMS_REPORT',
+        exportDate,
+        note: 'Full menu items list (main menu + walk-in menu) with prices and availability.',
+        menu,
+        walkinMenu: walkin
+    };
+    downloadFile(`habesha_menu_items_${dateTag}.json`, JSON.stringify(report, null, 2));
+    alert('✅ Menu items downloaded as DOCX + JSON.');
+};
+
+function generateMenuDocxReport(menu, walkin) {
+    const itemRow = (m, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><b>${esc(m.name)}</b></td>
+                    <td>${Number(m.price).toFixed(2)} Br</td>
+                    <td>${m.available === false ? 'Unavailable' : 'Available'}</td>
+                </tr>`;
+    const menuRows = menu.map(itemRow).join('');
+    const walkinRows = walkin.map(itemRow).join('');
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Menu Items Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #8B4513; border-bottom: 2px solid #8B4513; padding-bottom: 10px; }
+        h2 { color: #657184; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #8B4513; color: white; padding: 12px; text-align: left; }
+        td { border: 1px solid #dce2ea; padding: 10px; }
+        tr:nth-child(even) { background: #f8fbff; }
+        .summary { background: #f5f7fb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .summary-item { margin: 10px 0; font-size: 16px; }
+        .summary-item strong { color: #8B4513; }
+    </style>
+</head>
+<body>
+    <h1>🍽️ Habesha Cafe Menu Items</h1>
+    <div class="summary">
+        <h3>Report Summary</h3>
+        <div class="summary-item"><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+        <div class="summary-item"><strong>Main menu items:</strong> ${menu.length}</div>
+        <div class="summary-item"><strong>Walk-in menu items:</strong> ${walkin.length}</div>
+    </div>
+    <h2>Main Menu</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>${menuRows}
+        </tbody>
+    </table>
+    <h2>Walk-in Menu</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>${walkinRows}
+        </tbody>
+    </table>
+    <div style="margin-top: 50px; text-align: center; color: #657184; font-size: 12px;">
+        Generated by Habesha Cafe Management System
+    </div>
+</body>
+</html>`;
+}
+
 window.refreshReportsDashboard = function() {
     if (confirm('This will refresh the reports dashboard and reload the current view. Continue?')) {
         // Reload the current view to refresh the dashboard
@@ -3141,10 +3235,31 @@ window.refreshReportsDashboard = function() {
     }
 };
 
-// ── Employee Ranking: refresh + download (DOCX + JSON) ───────────────────────
-window.refreshRanking = function() {
+// ── Employee Ranking: reset (saves existing first) + download (DOCX + JSON) ──
+window.resetRanking = async function() {
+    const ranks = getRankings();
+    if (!ranks.length) return alert('No employees to rank yet.');
+    if (!confirm('This will download the current ranking (DOCX + JSON) as a backup and then reset ALL ranking totals back to zero.\n\nContinue?')) return;
+
+    // 1) Save the existing ranking first (DOCX + JSON backup).
+    const exportDate = now();
+    const dateTag = exportDate.slice(0, 10);
+    downloadFile(`habesha_employee_ranking_${dateTag}.docx`, generateRankingDocxReport(ranks));
+    const report = {
+        type: 'EMPLOYEE_RANKING_REPORT',
+        exportDate,
+        note: 'All-time employee ranking snapshot taken right before a ranking reset. Top spender = King.',
+        rankings: ranks
+    };
+    downloadFile(`habesha_employee_ranking_${dateTag}.json`, JSON.stringify(report, null, 2));
+
+    // 2) Reset the totals back to zero. rankingResetAt marks the cut-off so
+    // orders placed BEFORE the reset are not double-counted later on archive.
+    state.ranking = [];
+    state.rankingResetAt = now();
+    await save('RANKING_RESET');
+    alert('✅ Existing ranking downloaded as DOCX + JSON, then ranking totals were reset to zero.');
     render('reports');
-    alert('✅ Employee ranking refreshed (current week + all archived weeks).');
 };
 
 window.exportRankingReport = function() {
