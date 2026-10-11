@@ -152,7 +152,7 @@
 <!-- Login Container -->
 <div id="loginView" class="container login">
     <div class="card">
-        <div class="title"><i class="fas fa-coffee"></i> Evlogia cafe & Restaurant — Offline Portal</div>
+        <div class="title"><i class="fas fa-coffee"></i> Evlogia cafe & Restaurant</div>
         <div class="notice">
         </div>
         <div class="field">
@@ -167,7 +167,9 @@
             </div>
         </div>
         <button id="loginBtn" class="primary" style="width:100%; margin-top: 10px;"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+        <!-- Create Employee Account — disabled for now, will be re-enabled when needed.
         <button id="showSignupBtn" class="outline" style="width:100%; margin-top: 10px;"><i class="fas fa-user-plus"></i> Create Employee Account</button>
+        -->
         <div id="loginMsg" class="error"></div>
         
         <div class="sub" style="text-align: center; margin-top: 12px;">
@@ -176,6 +178,7 @@
     </div>
 </div>
 
+<!-- Employee Sign Up form — disabled for now, will be re-enabled when needed.
 <div id="signupView" class="container login hidden">
     <div class="card">
         <div class="title"><i class="fas fa-user-plus"></i> Employee Sign Up</div>
@@ -187,6 +190,7 @@
         <div id="signupMsg" class="error"></div>
     </div>
 </div>
+-->
 
 <!-- Main Application -->
 <div id="app" class="hidden">
@@ -4196,6 +4200,8 @@ async function login() {
 $('loginBtn').onclick = login;
 $('loginPass').onkeydown = e => { if (e.key === 'Enter') login(); };
 
+// ── Employee self-signup — disabled for now, will be re-enabled when needed. ──
+/*
 $('showSignupBtn').onclick = () => {
     $('loginView').classList.add('hidden');
     $('signupView').classList.remove('hidden');
@@ -4239,6 +4245,7 @@ $('doSignupBtn').onclick = async () => {
     $('signupView').classList.add('hidden');
     $('loginView').classList.remove('hidden');
 };
+*/
 
 $('resetDbBtn').onclick = async () => {
     if (!confirm('🚨 WARNING: This will permanently wipe ALL employees, menu items, orders, and reports. Are you absolutely sure?')) return;
