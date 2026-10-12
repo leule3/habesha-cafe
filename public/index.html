@@ -1691,7 +1691,9 @@ function homeView() {
                 </div>
             </div>
         `;
-    } else {
+    } else if (currentUser.role === 'admin') {
+        // Full ranking card is for the Cafe Admin only — HR / Super Admin
+        // should not see the employee ranking on the Home tab.
         rankingHtml = `
             <div class="card wide">
                 <div class="title"><i class="fas fa-trophy"></i> Employee Ranking</div>
@@ -2290,10 +2292,12 @@ function reportsView() {
     const cashRev = state.orders.filter(o => o.payment === 'Cash').reduce((a, o) => a + o.total, 0);
     const couponRev = state.orders.filter(o => o.payment.includes('Coupon')).reduce((a, o) => a + (o.couponPart || o.total), 0);
     const walletRev = state.orders.filter(o => o.payment.includes('Wallet')).reduce((a, o) => a + (o.walletPart || 0), 0);
-    const ranks = getRankings(); // all-time employee ranking
 
     const isAdmin = currentUser.role === 'admin';
     const isSuper = isSuperAdmin() || currentUser.role === 'hr';
+
+    // Employee ranking is only shown to the Cafe Admin — hidden for HR / Super Admin.
+    const ranks = isAdmin ? getRankings() : [];
 
     // Super Admin is restricted to coupon-usage reports: only coupon transactions
     // appear in the detailed daily order history (no cash / wallet data).
@@ -2351,6 +2355,7 @@ function reportsView() {
                 <div class="sub" style="margin-top: 8px;"><i class="fas fa-info-circle"></i> Archive buttons download the report in <b>both DOCX and JSON</b> formats automatically.</div>
             </div>
 
+            ${isAdmin ? `
             <div class="card wide">
                 <div class="title"><i class="fas fa-trophy"></i> Employee Ranking</div>
                 <div class="sub">All-time ranking (current week + every archived week). The top spender is crowned King — archiving a week does NOT reset it.</div>
@@ -2367,6 +2372,7 @@ function reportsView() {
                     <button class="small primary" onclick="exportRankingReport()"><i class="fas fa-download"></i> Download Ranking (DOCX + JSON)</button>
                 </div>
             </div>
+            ` : ''}
 
             <div class="card wide">
                 <div class="title"><i class="fas fa-download"></i> Quick Export Reports</div>
